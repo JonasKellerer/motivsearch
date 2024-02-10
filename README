@@ -1,0 +1,22 @@
+# Installation
+
+To run you need to have installed the following packages:
+- musescore3
+
+# Usage
+
+To run the script you need to execute the following command:
+
+```bash
+python3 src/main.py
+    --inputFolder yourPathToInputFolder
+    --outputFolder yourPathToInputFolder
+    --minFrequency 2
+    --maxGap 0
+    --minNumSequences 3
+    --maxNumSequences 3
+    --maxLength 4
+    --useDiatonic
+    --withInverted
+    --withMirrored
+```
