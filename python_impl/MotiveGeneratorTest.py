@@ -43,5 +43,5 @@ class MotiveGeneratorTest(unittest.TestCase):
         self.assertTrue(len(motives) >= 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
