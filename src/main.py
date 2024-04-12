@@ -2,10 +2,10 @@ import logging
 
 from MotiveGenerator import MotiveGenerator
 from MotiveWriter import write_motives_to_file, write_motives_as_json_to_file
-from src.MainParser import prase_args
+from src.MainParser import parse_args
 
 def main():
-    motive_generator_options, parser_options = prase_args()
+    motive_generator_options, parser_options = parse_args()
 
     generator = MotiveGenerator(
         motive_generator_options.min_frequency,

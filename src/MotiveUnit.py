@@ -104,8 +104,10 @@ class MotiveUnitInterval(MotiveUnit):
         return self.name
 
     def inverted(self):
+        inverted_interval = 1 if self._interval is 1 else -self._interval
+
         return MotiveUnitInterval(
-            -self._interval,
+            inverted_interval,
             self.original_work,
             self.original_position,
             PositionInWork.INVERTED,

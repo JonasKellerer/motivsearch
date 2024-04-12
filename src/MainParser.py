@@ -25,7 +25,7 @@ class ParserOptions:
     options: list[ParseOption]
 
 
-def prase_args() -> (MotiveGeneratorOptions, ParserOptions):
+def parse_args() -> (MotiveGeneratorOptions, ParserOptions):
     parser = argparse.ArgumentParser(description="Motive Generator")
     parser.add_argument(
         "--inputFolder", type=str, help="Folder containing the xml files"

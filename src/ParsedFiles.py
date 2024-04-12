@@ -138,7 +138,10 @@ class ParsedFiles:
     def parse_files(
         cls, input_folder: Path, options: List[ParseOption]
     ) -> "ParsedFiles":
-        is_xml = lambda file_path: file_path.suffix == ".xml"
+        is_xml = (
+            lambda file_path: file_path.suffix == ".xml"
+            or file_path.suffix == ".musicxml"
+        )
         file_paths = [file for file in input_folder.iterdir() if is_xml(file)]
 
         parsed_files = {
