@@ -29,8 +29,6 @@ class MotiveGenerator:
         self, file_path: Path, options: List[ParseOption]
     ) -> Tuple[List[Motive], ParsedFiles]:
         parsed_files = ParsedFiles.parse_files(file_path, options)
-        # testcases aufstellen
-        # testcases ausführen
         motives = self.generate_motives(parsed_files.get_all_motive_units(self.max_gap))
 
         motives = self.remove_motives_with_breaks(motives)

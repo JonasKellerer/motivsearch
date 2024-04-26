@@ -59,6 +59,12 @@ test_data = [
         ["1", "-2", "-4", "BreakTo", "BreakFrom", "3", "2", "1"],
         ["1", "2", "3", "BreakFrom", "BreakTo", "-4", "-2", "1"],
     ),
+    (
+        "testData/parsing/basic/with_multiple_voices_in_one_line.musicxml",
+        ["1", "1", "2", "4", "BreakTo", "BreakFrom", "-3", "-2", "1"],
+        ["1", "1", "-2", "-4", "BreakTo", "BreakFrom", "3", "2", "1"],
+        ["1", "2", "3", "BreakFrom", "BreakTo", "-4", "-2", "1", "1"],
+    ),
 ]
 
 

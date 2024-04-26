@@ -1,16 +1,115 @@
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Dict
 
 from music21 import converter, note, stream, chord
 from music21.interval import Interval
-from music21.note import GeneralNote
+from music21.note import GeneralNote, Note, Rest
+from music21.stream import Part as Part21
 from music21.stream.iterator import StreamIterator
 
 from MotivePosition import PositionInWork
 from MotiveUnit import MotiveUnitBreak, MotiveUnit, MotiveUnitInterval
 from UnitSequence import UnitSequence
 from src.MainParser import ParseOption
+
+
+@dataclass
+class Voice:
+    id: str
+    notes: List[Note | Rest]
+
+
+@dataclass
+class Part:
+    id: str
+    voices: List[Voice]
+
+    @classmethod
+    def parse(cls, part: Part21) -> "Part":
+        part.stripTies(inPlace=True)
+
+        voices = extract_voices(part, extrac_voice_ids(part))
+        return cls(part.id, voices)
+
+
+def extract_voices(part: Part21, voice_ids: List[str]):
+    part_data = {voice_id: [] for voice_id in voice_ids}
+
+    for i, measure in enumerate(part.getElementsByClass(stream.Measure)):
+        if len(measure.voices) == 0:
+            for note in measure.notesAndRests:
+                part_data[voice_ids[0]].append(use_only_highest_note(note))
+            for voice in voice_ids[1:]:
+                part_data[voice].append(
+                    Rest(quarterLength=measure.barDuration.quarterLength)
+                )
+
+        for voice in measure.voices:
+            for note in voice.notesAndRests:
+                part_data[voice.id].append(use_only_highest_note(note))
+
+    return [Voice(voice_id, part_data[voice_id]) for voice_id in voice_ids]
+
+
+def extrac_voice_ids(part: Part21) -> List[str]:
+    voice_ids = []
+    for measure in part.getElementsByClass(stream.Measure):
+        for voice in measure.getElementsByClass(stream.Voice):
+            voice_ids.append(voice.id)
+    if len(voice_ids) == 0:
+        voice_ids.append("0")
+
+    logging.debug(f"Voice ids: {voice_ids}")
+    return voice_ids
+
+
+def use_only_highest_note(note: GeneralNote) -> GeneralNote:
+    if isinstance(note, chord.Chord):
+        return note.sortAscending()[-1]
+    return note
+
+
+@dataclass
+class Piece:
+    title: str
+    parts: List[Part]
+
+    @classmethod
+    def parse(cls, file: Path) -> "Piece":
+        logging.info(f"Reading file {file}")
+        score = converter.parse(file)
+
+        parts = [Part.parse(part) for part in score.parts]
+
+        return cls(str(file), parts)
+
+
+@dataclass
+class Corpus:
+    pieces: List[Piece]
+
+    @classmethod
+    def parse(cls, input_folder: Path) -> "Corpus":
+        logging.info(f"Reading folder {input_folder}")
+        is_xml = (
+            lambda file_path: file_path.suffix == ".xml"
+            or file_path.suffix == ".musicxml"
+        )
+        file_paths = [file for file in input_folder.iterdir() if is_xml(file)]
+
+        pieces = [Piece.parse(file) for file in file_paths]
+        return cls(pieces)
+
+
+def remove_accidentals(corpus: Corpus):
+    for piece in corpus.pieces:
+        for part in piece.parts:
+            for voice in part.voices:
+                for note in voice.notes:
+                    if isinstance(note, Note):
+                        note.pitch.accidental = None
 
 
 @dataclass
