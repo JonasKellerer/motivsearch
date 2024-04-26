@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 
-from MotivePosition import PositionInWork
+from Origin import Origin
+from PositionInWork import PositionInWork
 
 
 class RestIntervalType(str, Enum):
@@ -13,15 +14,6 @@ class RestIntervalType(str, Enum):
 
     def __str__(self):
         return self.name
-
-
-@dataclass(eq=True, frozen=True)
-class Origin:
-    piece_title: str
-    part_id: str
-    voice_id: str
-    measure_number: int
-    note_number: int
 
 
 @dataclass(eq=True, frozen=True)
@@ -62,7 +54,7 @@ class MotiveUnitBreak(MotiveUnit):
         origin: Origin,
         position_in_work: PositionInWork = PositionInWork.ORIGINAL,
     ):
-        super().__init__(origin, position_in_work)
+        super().__init__(_origin=origin, _position_in_work=position_in_work)
         object.__setattr__(self, "_type", type)
 
     @property
@@ -77,16 +69,16 @@ class MotiveUnitBreak(MotiveUnit):
 
     def inverted(self):
         return MotiveUnitBreak(
-            self._type,
-            self.origin,
-            PositionInWork.INVERTED,
+            type=self._type,
+            origin=self.origin,
+            position_in_work=PositionInWork.INVERTED,
         )
 
     def mirrored(self):
         return MotiveUnitBreak(
-            self._type,
-            self.origin,
-            PositionInWork.MIRRORED,
+            type=self._type,
+            origin=self.origin,
+            position_in_work=PositionInWork.MIRRORED,
         )
 
 
@@ -101,7 +93,7 @@ class MotiveUnitInterval(MotiveUnit):
         origin: Origin,
         position_in_work: PositionInWork = PositionInWork.ORIGINAL,
     ):
-        super().__init__(origin, position_in_work)
+        super().__init__(_origin=origin, _position_in_work=position_in_work)
         object.__setattr__(self, "_interval", interval)
 
     @property
@@ -115,17 +107,17 @@ class MotiveUnitInterval(MotiveUnit):
         return self.name
 
     def inverted(self):
-        inverted_interval = 1 if self._interval is 1 else -self._interval
+        inverted_interval = 1 if self._interval == 1 else -self._interval
 
         return MotiveUnitInterval(
-            inverted_interval,
-            self.origin,
-            PositionInWork.INVERTED,
+            interval=inverted_interval,
+            origin=self.origin,
+            position_in_work=PositionInWork.INVERTED,
         )
 
     def mirrored(self):
         return MotiveUnitInterval(
-            self._interval,
-            self.origin,
-            PositionInWork.MIRRORED,
+            interval=self._interval,
+            origin=self.origin,
+            position_in_work=PositionInWork.MIRRORED,
         )

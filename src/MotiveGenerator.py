@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
+from Corpus import Corpus
 from Motive import Motive
 from MotivePosition import PositionInWork, MotivePosition
 from MotiveSequence import PositionSequence
 from MotiveUnit import MotiveUnitInterval, MotiveUnit
-from ParsedFiles import ParsedFiles, Corpus, remove_accidentals, MotiveUnitGenerator
+from MotiveUnitGenerator import MotiveUnitGenerator
 from UnitSequence import UnitSequence
 from src.MainParser import ParseOption
 
@@ -144,8 +145,7 @@ class MotiveGenerator:
                 MotivePosition(
                     index,
                     1,
-                    unit.original_work,
-                    unit.original_position,
+                    unit.origin,
                     unit.position_in_work,
                 )
             )
@@ -202,8 +202,7 @@ class MotiveGenerator:
                         position.position,
                         (next_positions[0].position - position.position)
                         + next_positions[0].length,
-                        position.original_work,
-                        position.original_position,
+                        position.origin,
                         position.position_in_work,
                     )
                 )

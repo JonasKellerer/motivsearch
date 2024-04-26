@@ -1,10 +1,7 @@
-import logging
 import unittest
 from pathlib import Path
 
-from music21.note import Note
-
-from ParsedFiles import Piece
+from Piece import Piece
 
 
 class PieceTest(unittest.TestCase):
