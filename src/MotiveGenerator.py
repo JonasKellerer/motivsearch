@@ -5,7 +5,7 @@ from Motive import Motive
 from MotivePosition import PositionInWork, MotivePosition
 from MotiveSequence import PositionSequence
 from MotiveUnit import MotiveUnitInterval, MotiveUnit
-from ParsedFiles import ParsedFiles
+from ParsedFiles import ParsedFiles, Corpus, remove_accidentals, MotiveUnitGenerator
 from UnitSequence import UnitSequence
 from src.MainParser import ParseOption
 
@@ -27,9 +27,14 @@ class MotiveGenerator:
 
     def discover_motives(
         self, file_path: Path, options: List[ParseOption]
-    ) -> Tuple[List[Motive], ParsedFiles]:
-        parsed_files = ParsedFiles.parse_files(file_path, options)
-        motives = self.generate_motives(parsed_files.get_all_motive_units(self.max_gap))
+    ) -> List[Motive]:
+        corpus = Corpus.parse(file_path)
+        corpus.remove_accidentals()
+
+        motive_unit_generator = MotiveUnitGenerator(options, self.max_gap)
+        motive_units = motive_unit_generator.from_corpus(corpus)
+
+        motives = self.generate_motives(motive_units)
 
         motives = self.remove_motives_with_breaks(motives)
 
@@ -42,7 +47,7 @@ class MotiveGenerator:
         ):
             motives = self.remove_motives_only_in_mirrored_and_inverted(motives)
 
-        return motives, parsed_files
+        return motives
 
     def remove_motives_with_breaks(self, motives: List[Motive]) -> List[Motive]:
         return [

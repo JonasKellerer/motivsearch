@@ -38,11 +38,11 @@ class PieceTest(unittest.TestCase):
         ]
 
         self.assertListEqual(
-            [note.fullName for note in piece.parts[0].voices[0].notes],
+            piece.parts[0].voices[0].full_names(),
             notesOfFirstVoice,
         )
         self.assertListEqual(
-            [note.fullName for note in piece.parts[0].voices[1].notes],
+            piece.parts[0].voices[1].full_names(),
             notesOfSecondVoice,
         )
 
@@ -77,11 +77,11 @@ class PieceTest(unittest.TestCase):
         ]
 
         self.assertListEqual(
-            [note.fullName for note in piece.parts[0].voices[0].notes],
+            piece.parts[0].voices[0].full_names(),
             notesOfFirstPart,
         )
         self.assertListEqual(
-            [note.fullName for note in piece.parts[1].voices[0].notes],
+            piece.parts[1].voices[0].full_names(),
             notesOfSecondPart,
         )
 
@@ -127,21 +127,17 @@ class PieceTest(unittest.TestCase):
         ]
 
         self.assertListEqual(
-            [note.fullName for note in piece.parts[0].voices[0].notes],
+            piece.parts[0].voices[0].full_names(),
             notesOfFirstVoice,
         )
         self.assertListEqual(
-            [note.fullName for note in piece.parts[0].voices[1].notes],
+            piece.parts[0].voices[1].full_names(),
             notesOfSecondVoice,
         )
         self.assertListEqual(
-            [note.fullName for note in piece.parts[1].voices[0].notes],
+            piece.parts[1].voices[0].full_names(),
             notesOfSecondPart,
         )
-
-    # def test_should_strip_ties_while_parsing(self):
-    #     filename = "testData/parsing/basic/ties.musicxml"
-    #     piece = Piece.parse(file=Path(filename))
 
     def test_should_only_use_highest_note_in_chord(self):
         filename = "testData/parsing/basic/one_accord_per_note.musicxml"
@@ -162,7 +158,7 @@ class PieceTest(unittest.TestCase):
         ]
 
         self.assertListEqual(
-            [note.fullName for note in piece.parts[0].voices[0].notes],
+            piece.parts[0].voices[0].full_names(),
             notesOfFirstVoice,
         )
 
@@ -183,7 +179,7 @@ class PieceTest(unittest.TestCase):
         ]
 
         self.assertListEqual(
-            [note.fullName for note in piece.parts[0].voices[0].notes],
+            piece.parts[0].voices[0].full_names(),
             notesOfFirstVoice,
         )
 

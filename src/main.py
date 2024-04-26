@@ -4,6 +4,7 @@ from MotiveGenerator import MotiveGenerator
 from MotiveWriter import write_motives_to_file, write_motives_as_json_to_file
 from src.MainParser import parse_args
 
+
 def main():
     motive_generator_options, parser_options = parse_args()
 
@@ -15,7 +16,7 @@ def main():
         motive_generator_options.max_num_sequences,
     )
 
-    motives, parsed_files = generator.discover_motives(
+    motives = generator.discover_motives(
         parser_options.input_folder, parser_options.options
     )
 

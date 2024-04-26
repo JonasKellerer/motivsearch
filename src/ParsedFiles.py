@@ -10,7 +10,13 @@ from music21.stream import Part as Part21
 from music21.stream.iterator import StreamIterator
 
 from MotivePosition import PositionInWork
-from MotiveUnit import MotiveUnitBreak, MotiveUnit, MotiveUnitInterval
+from MotiveUnit import (
+    MotiveUnitBreak,
+    MotiveUnit,
+    MotiveUnitInterval,
+    Origin,
+    RestIntervalType,
+)
 from UnitSequence import UnitSequence
 from src.MainParser import ParseOption
 
@@ -19,6 +25,9 @@ from src.MainParser import ParseOption
 class Voice:
     id: str
     notes: List[Note | Rest]
+
+    def full_names(self) -> List[str]:
+        return [note.fullName for note in self.notes]
 
 
 @dataclass
@@ -102,168 +111,115 @@ class Corpus:
         pieces = [Piece.parse(file) for file in file_paths]
         return cls(pieces)
 
-
-def remove_accidentals(corpus: Corpus):
-    for piece in corpus.pieces:
-        for part in piece.parts:
-            for voice in part.voices:
-                for note in voice.notes:
-                    if isinstance(note, Note):
-                        note.pitch.accidental = None
+    def remove_accidentals(self):
+        for piece in self.pieces:
+            for part in piece.parts:
+                for voice in part.voices:
+                    for note in voice.notes:
+                        if isinstance(note, Note):
+                            note.pitch.accidental = None
 
 
 @dataclass
-class ParsedFile:
-    motive_units: List[MotiveUnit]
-    motive_units_inverted: List[MotiveUnit]
-    motive_units_mirrored: List[MotiveUnit]
-    notes_and_rests: StreamIterator[GeneralNote]
-    original_work: str
+class MotiveUnitGenerator:
+    options: List[ParseOption]
+    max_gap: int
 
-    @classmethod
-    def parse_file(cls, file_path: Path, options: List[ParseOption]) -> "ParsedFile":
-        def get_inverted(motive_units: List[MotiveUnit]) -> List[MotiveUnit]:
-            if ParseOption.WITH_INVERTED in options:
-                return UnitSequence(motive_units).inverted().sequence
-            return []
+    def from_corpus(self, corpus: Corpus):
 
-        def get_mirrored(motive_units: List[MotiveUnit]) -> List[MotiveUnit]:
-            if ParseOption.WITH_MIRRORED in options:
-                return UnitSequence(motive_units).mirrored_and_inverted().sequence
-            return []
+        motive_units = []
+        for piece in corpus.pieces:
+            for part in piece.parts:
+                for voice in part.voices:
+                    units = self.includingInvertedAndMirrored(
+                        voice, piece.title, part.id
+                    )
+                    motive_units = add_with_breaks(units, self.max_gap)
 
-        notes_and_rests = cls.get_notes(file_path)
-        intervals_from_file = cls.get_motive_units(notes_and_rests, str(file_path))
+        return motive_units
 
-        return cls(
-            intervals_from_file,
-            get_inverted(intervals_from_file),
-            get_mirrored(intervals_from_file),
-            notes_and_rests,
-            str(file_path),
+    def includingInvertedAndMirrored(
+        self, voice: Voice, piece_title: str, part_id: str
+    ):
+        original = MotiveUnitGenerator.originalFromVoice(voice, piece_title, part_id)
+        inverted = get_inverted(original, self.options)
+        mirrored = get_mirrored(original, self.options)
+
+        return (
+            original
+            + add_with_breaks(inverted, self.max_gap)
+            + add_with_breaks(mirrored, self.max_gap)
         )
 
-    @staticmethod
-    def get_notes(file_path: Path) -> StreamIterator[GeneralNote]:
-        score = converter.parse(file_path)
-
-        new_score = ParsedFile.use_only_highest_notes_in_chord(score)
-
-        ParsedFile.strip_ties(new_score)
-
-        notes_and_rests = new_score.flatten().notesAndRests
-
-        ParsedFile.remove_accidentals(notes_and_rests)
-
-        return notes_and_rests
-
-    @staticmethod
-    def strip_ties(new_score):
-        for part in new_score.parts:
-            part.stripTies(inPlace=True)
-
-    @staticmethod
-    def remove_accidentals(notes_and_rests):
-        for note_or_rest in notes_and_rests:
-            if isinstance(note_or_rest, note.Note):
-                note_or_rest.pitch.accidental = None
-
-    @staticmethod
-    def use_only_highest_notes_in_chord(score):
-        new_score = stream.Score()
-        for part in score.parts:
-            new_part = stream.Part()
-
-            for element in part.flatten():
-                if isinstance(element, chord.Chord):
-                    highest_note = element.sortAscending()[-1]
-                    new_part.append(highest_note)
-                else:
-                    new_part.append(element)
-
-            new_score.append(new_part)
-        return new_score
-
-    @staticmethod
-    def get_motive_units(
-        notes_and_rests: StreamIterator[GeneralNote],
-        work: str,
+    def originalFromVoice(
+        self, voice: Voice, piece_title: str, part_id: str
     ) -> List[MotiveUnit]:
 
         motive_units: List[MotiveUnit] = []
-        for i in range(len(notes_and_rests) - 1):
-            if isinstance(notes_and_rests[i], note.Note):
-                if isinstance(notes_and_rests[i + 1], note.Note):
+
+        for i, note_or_rest in enumerate(voice.notes):
+            origin = Origin(
+                piece_title,
+                part_id,
+                voice.id,
+                note_or_rest.measureNumber,
+                i,
+            )
+
+            if isinstance(note_or_rest, note.Note):
+                if isinstance(voice.notes[i + 1], note.Note):
                     motive_units.append(
                         MotiveUnitInterval(
-                            Interval(
-                                notes_and_rests[i], notes_and_rests[i + 1]
-                            ).generic.directed,
-                            work,
-                            i,
+                            Interval(note_or_rest, voice.notes[i + 1]).generic.directed,
+                            origin,
                         )
                     )
                 else:
-                    motive_units.append(MotiveUnitBreak("BreakTo", work, i))
+                    motive_units.append(
+                        MotiveUnitBreak(RestIntervalType.NOTE_BEFORE, origin)
+                    )
             else:
-                motive_units.append(MotiveUnitBreak("BreakFrom", work, i))
+                if isinstance(voice.notes[i + 1], note.Note):
+                    motive_units.append(
+                        MotiveUnitBreak(RestIntervalType.NOTE_AFTER, origin)
+                    )
+                else:
+                    motive_units.append(
+                        MotiveUnitBreak(RestIntervalType.REST_BEFORE, origin)
+                    )
+
         return motive_units
 
-    def get_all_motive_units(self, max_gap: int) -> List[MotiveUnit]:
-        def get_breaks():
-            return [
-                MotiveUnitBreak("RestBetween", "noWork", -1, PositionInWork.OUTSIDE)
-                for _ in range(max_gap)
-            ]
 
-        def add_with_breaks(motive_units: List[MotiveUnit]) -> List[MotiveUnit]:
-            if len(motive_units) == 0:
-                return []
+def get_inverted(
+    motive_units: List[MotiveUnit], options: List[ParseOption]
+) -> List[MotiveUnit]:
+    if ParseOption.WITH_INVERTED in options:
+        return UnitSequence(motive_units).inverted().sequence
+    return []
 
-            return get_breaks() + motive_units
 
-        return (
-            self.motive_units
-            + add_with_breaks(self.motive_units_inverted)
-            + add_with_breaks(self.motive_units_mirrored)
+def get_mirrored(
+    motive_units: List[MotiveUnit], options: List[ParseOption]
+) -> List[MotiveUnit]:
+    if ParseOption.WITH_MIRRORED in options:
+        return UnitSequence(motive_units).mirrored_and_inverted().sequence
+    return []
+
+
+def get_breaks(max_gap: int) -> List[MotiveUnit]:
+    origin_outside = Origin("noWork", "noWork", "noWork", -1, -1)
+
+    return [
+        MotiveUnitBreak(
+            RestIntervalType.DIVIDER, origin_outside, PositionInWork.OUTSIDE
         )
+        for _ in range(max_gap)
+    ]
 
 
-@dataclass
-class ParsedFiles:
-    parsed_files: Dict[Path, ParsedFile]
+def add_with_breaks(motive_units: List[MotiveUnit], max_gap: int) -> List[MotiveUnit]:
+    if len(motive_units) == 0:
+        return []
 
-    @classmethod
-    def parse_files(
-        cls, input_folder: Path, options: List[ParseOption]
-    ) -> "ParsedFiles":
-        is_xml = (
-            lambda file_path: file_path.suffix == ".xml"
-            or file_path.suffix == ".musicxml"
-        )
-        file_paths = [file for file in input_folder.iterdir() if is_xml(file)]
-
-        parsed_files = {
-            file_path: ParsedFile.parse_file(file_path, options)
-            for file_path in file_paths
-        }
-        return cls(parsed_files)
-
-    def get_all_motive_units(self, max_gap: int) -> List[MotiveUnit]:
-        def get_breaks():
-            return [
-                MotiveUnitBreak("RestBetween", "noWork", -1, PositionInWork.OUTSIDE)
-                for _ in range(max_gap)
-            ]
-
-        def add_with_breaks(motive_units: List[MotiveUnit]) -> List[MotiveUnit]:
-            if len(motive_units) == 0:
-                return []
-
-            return get_breaks() + motive_units
-
-        output = []
-        for _, parsed_file in self.parsed_files.items():
-            output = output + add_with_breaks(parsed_file.get_all_motive_units(max_gap))
-
-        return output
+    return get_breaks(max_gap) + motive_units
