@@ -16,13 +16,22 @@ class MotivePosition:
         return f"{self.position}:{self.length}:{self.origin}:{self.position_in_work}"
 
     def __repr__(self):
-        return f"{self.origin}:{self.length}"
+        return f"{self.origin.note_number}:{self.length}"
+
+    def __eq__(self, other: "MotivePosition") -> bool:
+        return self.is_same_position(other)
 
     def is_same_position(self, other: "MotivePosition") -> bool:
         if self.length != other.length:
             return False
 
-        if self.origin != other.origin:
+        if self.origin.piece_title != other.origin.piece_title:
+            return False
+
+        if self.origin.part_id != other.origin.part_id:
+            return False
+
+        if self.origin.voice_id != other.origin.voice_id:
             return False
 
         if (

@@ -32,7 +32,7 @@ class MotiveUnitGenerator:
                     units = self.including_inverted_and_mirrored(
                         voice, piece.title, part.id
                     )
-                    motive_units = add_with_breaks(units, self.max_gap)
+                    motive_units += add_with_breaks(units, self.max_gap)
 
         return motive_units
 
@@ -119,7 +119,7 @@ def get_breaks(max_gap: int) -> List[MotiveUnit]:
         MotiveUnitBreak(
             RestIntervalType.DIVIDER, origin_outside, PositionInWork.OUTSIDE
         )
-        for _ in range(max_gap)
+        for _ in range(max_gap + 1)
     ]
 
 

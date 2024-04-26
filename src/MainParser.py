@@ -9,6 +9,15 @@ class ParseOption(Enum):
     WITH_MIRRORED = 2
     USE_DIATONIC = 3
 
+    def __eq__(self, other):
+        if type(self).__qualname__ != type(other).__qualname__:
+            return NotImplemented
+        return self.name == other.name and self.value == other.value
+
+    def __hash__(self):
+        return hash((type(self).__qualname__, self.name))
+
+
 @dataclass
 class MotiveGeneratorOptions:
     min_frequency: int
