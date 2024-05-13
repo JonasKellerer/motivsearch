@@ -5,7 +5,6 @@ from typing import List
 
 from Motive import Motive
 from MotivePosition import PositionInWork
-from ParsedFiles import ParsedFiles
 
 
 def write_motives_as_json_to_file(motives: List[Motive], output_folder: Path):
@@ -53,7 +52,7 @@ def write_motives_to_file(motives: List[Motive], output_folder: Path):
             )
 
             output: List[str] = []
-            output.append(motive.sequence[0].original_work)
+            output.append(motive.sequence[0].origin.piece_title)
             output.append(str(motive.sequence))
             output.append(str(motive.frequency))
             output.append(str(motive.positions))
@@ -65,12 +64,3 @@ def write_motives_to_file(motives: List[Motive], output_folder: Path):
             output.append(str(mirrored_positions))
 
             file.write("\t".join(output) + "\n")
-
-
-def plot_motives(motives: List[Motive], parsed_files: ParsedFiles, output_folder: Path):
-    def get_works() -> set[Path]:
-        return set(parsed_files.parsed_files.keys())
-
-    works = get_works()
-
-    pass

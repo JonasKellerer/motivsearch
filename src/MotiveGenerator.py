@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
+from Corpus import Corpus
 from Motive import Motive
 from MotivePosition import PositionInWork, MotivePosition
-from MotiveSequence import PositionSequence
 from MotiveUnit import MotiveUnitInterval, MotiveUnit
-from ParsedFiles import ParsedFiles
+from MotiveUnitGenerator import MotiveUnitGenerator
+from PositionSequence import PositionSequence
 from UnitSequence import UnitSequence
 from src.MainParser import ParseOption
 
@@ -27,24 +28,29 @@ class MotiveGenerator:
 
     def discover_motives(
         self, file_path: Path, options: List[ParseOption]
-    ) -> Tuple[List[Motive], ParsedFiles]:
-        parsed_files = ParsedFiles.parse_files(file_path, options)
-        # testcases aufstellen
-        # testcases ausführen
-        motives = self.generate_motives(parsed_files.get_all_motive_units(self.max_gap))
+    ) -> List[Motive]:
+        corpus = Corpus.parse(file_path)
+        corpus.remove_accidentals()
+
+        motive_unit_generator = MotiveUnitGenerator(
+            options=options, max_gap=self.max_gap
+        )
+        motive_units = motive_unit_generator.from_corpus(corpus)
+
+        motives = self.generate_motives(motive_units)
 
         motives = self.remove_motives_with_breaks(motives)
 
         if ParseOption.WITH_INVERTED in options or ParseOption.WITH_MIRRORED in options:
             motives = self.merge_inverted_and_mirrored(motives)
 
-        if (
-            ParseOption.WITH_INVERTED in options
-            and ParseOption.WITH_MIRRORED in options
-        ):
-            motives = self.remove_motives_only_in_mirrored_and_inverted(motives)
+        # if (
+        #     ParseOption.WITH_INVERTED in options
+        #     and ParseOption.WITH_MIRRORED in options
+        # ):
+        #     motives = self.remove_motives_only_in_mirrored_and_inverted(motives)
 
-        return motives, parsed_files
+        return motives
 
     def remove_motives_with_breaks(self, motives: List[Motive]) -> List[Motive]:
         return [
@@ -69,15 +75,36 @@ class MotiveGenerator:
                 if UnitSequence(unique_motive.sequence).is_equal_mirrored_or_inverted(
                     UnitSequence(sequence)
                 ):
-                    original_positions = PositionSequence(unique_motive.positions)
-                    original_positions.merge(PositionSequence(motive.positions))
-                    unique_motive.positions = original_positions.sequence
+                    original, to_merge = self.switch_original_and_to_merge(
+                        unique_motive, motive
+                    )
+
+                    original_position_sequence = PositionSequence(original.positions)
+
+                    original_position_sequence.merge(
+                        PositionSequence(to_merge.positions)
+                    )
+                    unique_motive.positions = original_position_sequence.sequence
+                    unique_motive.frequency = len(original_position_sequence.sequence)
+                    unique_motive.sequence = original.sequence
+
                     merged = True
                     break
             if not merged:
                 unique_motives.append(motive)
 
         return unique_motives
+
+    def switch_original_and_to_merge(
+        self, original: Motive, to_merge: Motive
+    ) -> tuple[Motive, Motive]:
+        if (
+            to_merge.positions[0].position_in_work == PositionInWork.ORIGINAL
+            and original.positions[0].position_in_work != PositionInWork.ORIGINAL
+        ):
+            return to_merge, original
+
+        return original, to_merge
 
     def remove_motives_only_in_mirrored_and_inverted(
         self, motives: List[Motive]
@@ -98,7 +125,8 @@ class MotiveGenerator:
         basic_motives = self.get_basic_motives(sequence)
         motives_of_all_iterations = []
 
-        current_motive = self.get_initial_motives(basic_motives.copy())
+        # current_motive = self.get_initial_motives(basic_motives.copy())
+        current_motive = basic_motives.copy()
 
         while current_motive:
             new_motives = []
@@ -139,11 +167,10 @@ class MotiveGenerator:
                 basic_motives[unit.name] = Motive([], 0, [unit])
             basic_motives[unit.name].positions.append(
                 MotivePosition(
-                    index,
-                    1,
-                    unit.original_work,
-                    unit.original_position,
-                    unit.position_in_work,
+                    position=index,
+                    length=1,
+                    origin=unit.origin,
+                    position_in_work=unit.position_in_work,
                 )
             )
             basic_motives[unit.name].frequency += 1
@@ -170,10 +197,14 @@ class MotiveGenerator:
         ]
 
     def merge_motives(self, motive: Motive, candidate: Motive) -> Optional[Motive]:
+
         new_positions = []
         for position in motive.positions:
             next_positions = []
             for candidate_position in candidate.positions:
+                if position.position_in_work != candidate_position.position_in_work:
+                    continue
+
                 gap = candidate_position.position - (
                     position.position + position.length
                 )
@@ -196,18 +227,21 @@ class MotiveGenerator:
             if next_positions:
                 new_positions.append(
                     MotivePosition(
-                        position.position,
-                        (next_positions[0].position - position.position)
+                        position=position.position,
+                        length=(next_positions[0].position - position.position)
                         + next_positions[0].length,
-                        position.original_work,
-                        position.original_position,
-                        position.position_in_work,
+                        origin=position.origin,
+                        position_in_work=position.position_in_work,
                     )
                 )
 
         if new_positions:
+            position_sequence = PositionSequence(new_positions)
+
             return Motive(
-                new_positions, len(new_positions), motive.sequence + candidate.sequence
+                positions=position_sequence.sequence,
+                frequency=len(position_sequence.sequence),
+                sequence=motive.sequence + candidate.sequence,
             )
         return None
 

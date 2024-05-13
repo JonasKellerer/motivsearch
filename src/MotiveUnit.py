@@ -1,14 +1,25 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 
-from MotivePosition import PositionInWork
+from Origin import Origin
+from PositionInWork import PositionInWork
+
+
+class RestIntervalType(str, Enum):
+    NOTE_BEFORE = 0
+    NOTE_AFTER = 1
+    REST_BEFORE = 2
+    DIVIDER = 3
+
+    def __str__(self):
+        return self.name
 
 
 @dataclass(eq=True, frozen=True)
 class MotiveUnit(ABC):
-    _original_work: str
-    _original_position: int
     _position_in_work: PositionInWork
+    _origin: Origin
 
     @property
     @abstractmethod
@@ -24,12 +35,8 @@ class MotiveUnit(ABC):
         pass
 
     @property
-    def original_work(self) -> str:
-        return self._original_work
-
-    @property
-    def original_position(self) -> int:
-        return self._original_position
+    def origin(self) -> Origin:
+        return self._origin
 
     @property
     def position_in_work(self) -> PositionInWork:
@@ -39,42 +46,39 @@ class MotiveUnit(ABC):
 @dataclass(eq=True, frozen=True)
 class MotiveUnitBreak(MotiveUnit):
 
-    _name: str
+    _type: RestIntervalType
 
     def __init__(
         self,
-        name: str,
-        original_work: str,
-        original_position: int,
+        type: RestIntervalType,
+        origin: Origin,
         position_in_work: PositionInWork = PositionInWork.ORIGINAL,
     ):
-        super().__init__(original_work, original_position, position_in_work)
-        object.__setattr__(self, "_name", name)
+        super().__init__(_origin=origin, _position_in_work=position_in_work)
+        object.__setattr__(self, "_type", type)
 
     @property
     def name(self) -> str:
-        return self._name
+        return str(self._type)
 
     def __str__(self):
-        return self.name
+        return str(self._type)
 
     def __repr__(self):
-        return self.name
+        return str(self._type)
 
     def inverted(self):
         return MotiveUnitBreak(
-            self._name,
-            self.original_work,
-            self.original_position,
-            PositionInWork.INVERTED,
+            type=self._type,
+            origin=self.origin,
+            position_in_work=PositionInWork.INVERTED,
         )
 
     def mirrored(self):
         return MotiveUnitBreak(
-            self._name,
-            self.original_work,
-            self.original_position,
-            PositionInWork.MIRRORED,
+            type=self._type,
+            origin=self.origin,
+            position_in_work=PositionInWork.MIRRORED,
         )
 
 
@@ -86,11 +90,10 @@ class MotiveUnitInterval(MotiveUnit):
     def __init__(
         self,
         interval: int,
-        original_work: str,
-        original_position: int,
+        origin: Origin,
         position_in_work: PositionInWork = PositionInWork.ORIGINAL,
     ):
-        super().__init__(original_work, original_position, position_in_work)
+        super().__init__(_origin=origin, _position_in_work=position_in_work)
         object.__setattr__(self, "_interval", interval)
 
     @property
@@ -104,17 +107,17 @@ class MotiveUnitInterval(MotiveUnit):
         return self.name
 
     def inverted(self):
+        inverted_interval = 1 if self._interval == 1 else -self._interval
+
         return MotiveUnitInterval(
-            -self._interval,
-            self.original_work,
-            self.original_position,
-            PositionInWork.INVERTED,
+            interval=inverted_interval,
+            origin=self.origin,
+            position_in_work=PositionInWork.INVERTED,
         )
 
     def mirrored(self):
         return MotiveUnitInterval(
-            self._interval,
-            self.original_work,
-            self.original_position,
-            PositionInWork.MIRRORED,
+            interval=self._interval,
+            origin=self.origin,
+            position_in_work=PositionInWork.MIRRORED,
         )

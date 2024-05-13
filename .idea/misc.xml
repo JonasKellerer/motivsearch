@@ -3,7 +3,8 @@
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
     <option name="enabledOnSave" value="true" />
-    <option name="sdkName" value="Python 3.10 (python_impl)" />
+    <option name="pathToExecutable" value="$USER_HOME$/.local/bin/black" />
+    <option name="sdkName" value="Python 3.10 (motivsearch) (2)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (motivsearch)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (motivsearch) (2)" project-jdk-type="Python SDK" />
 </project>
