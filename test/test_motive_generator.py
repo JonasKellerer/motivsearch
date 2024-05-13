@@ -470,10 +470,37 @@ class MotiveGeneratorTest_DiscoverMotives(unittest.TestCase):
 
         self.assertEqual(len(motives), 2)
 
-        # welches stück auch immer zu erst eingelesen wird, das wird als original genommen?
         expected_motives = [
             {"frequency": 2, "sequence": "[1, 2, 4]"},
             {"frequency": 2, "sequence": "[1, -2, -3]"},
+        ]
+
+        for i, expected_motive in enumerate(expected_motives):
+            self.assertEqual(motives[i].frequency, expected_motive["frequency"])
+            self.assertEqual(str(motives[i].sequence), expected_motive["sequence"])
+
+    def test_multiple_pieces_same_motive_in_mirrored_and_inverted(self):
+        file_path = Path(
+            "testData/multiple_pieces/same_motive_in_mirrored_and_inverted"
+        )
+
+        motive_generator = MotiveGenerator(
+            min_frequency=1,
+            max_gap=0,
+            max_length=3,
+            min_num_sequences=3,
+            max_num_sequences=3,
+        )
+
+        motives = motive_generator.discover_motives(
+            file_path=file_path, options=self.options
+        )
+
+        self.assertEqual(len(motives), 2)
+
+        expected_motives = [
+            {"frequency": 4, "sequence": "[1, 2, 4]"},
+            {"frequency": 4, "sequence": "[-3, -2, 1]"},
         ]
 
         for i, expected_motive in enumerate(expected_motives):
