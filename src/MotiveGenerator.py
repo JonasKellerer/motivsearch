@@ -1,3 +1,5 @@
+import logging
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import List, Optional
 
@@ -29,6 +31,7 @@ class MotiveGenerator:
     def discover_motives(
         self, file_path: Path, options: List[ParseOption]
     ) -> List[Motive]:
+        logging.info(f"Discovering motives in {file_path}")
         corpus = Corpus.parse(file_path)
         corpus.remove_accidentals()
 
@@ -122,19 +125,22 @@ class MotiveGenerator:
         self,
         sequence: List[MotiveUnit],
     ) -> List[Motive]:
+        logging.info("Generating motives")
         basic_motives = self.get_basic_motives(sequence)
         motives_of_all_iterations = []
 
-        # current_motive = self.get_initial_motives(basic_motives.copy())
-        current_motive = basic_motives.copy()
+        current_motive = self.get_initial_motives(basic_motives.copy())
 
         while current_motive:
+            logging.info(f"Current motives: {len(current_motive)}")
             new_motives = []
             for motive in current_motive:
+                logging.info(f"Current motive: {motive.sequence}")
                 frequent_position = self.get_frequent_position(motive)
                 candidate_extensions = self.generate_candidate_extension(
                     basic_motives, frequent_position
                 )
+                logging.info(f"Found {len(candidate_extensions)} candidate extensions")
                 for candidate in candidate_extensions:
                     merged = self.merge_motives(motive, candidate)
                     if merged is not None:
@@ -146,21 +152,23 @@ class MotiveGenerator:
                 for motive in current_motive
                 if len(motive.sequence) >= self.min_num_sequences
             ]
+            logging.info(
+                f"Found {len(motives_to_add_to_all_iterations)} motives with at least {self.min_num_sequences} sequences"
+            )
             motives_of_all_iterations.extend(motives_to_add_to_all_iterations)
 
         return motives_of_all_iterations
 
     def get_initial_motives(self, motives: List[Motive]) -> List[Motive]:
+        logging.info("Getting initial motives. Removing motives with breaks.")
         return [
             motive
             for motive in motives
-            if all(
-                sequence.position_in_work == PositionInWork.ORIGINAL
-                for sequence in motive.sequence
-            )
+            if all(isinstance(unit, MotiveUnitInterval) for unit in motive.sequence)
         ]
 
     def get_basic_motives(self, sequence: List[MotiveUnit]) -> List[Motive]:
+        logging.info("Getting basic motives")
         basic_motives: dict[str, Motive] = {}
         for index, unit in enumerate(sequence):
             if unit.name not in basic_motives:
@@ -174,6 +182,7 @@ class MotiveGenerator:
                 )
             )
             basic_motives[unit.name].frequency += 1
+        logging.info(f"Found {len(basic_motives)} basic motives")
 
         return [
             motive
@@ -190,50 +199,32 @@ class MotiveGenerator:
     def generate_candidate_extension(
         self, base_motives: List[Motive], frequent_position: int
     ) -> List[Motive]:
+        logging.info(
+            f"Generating candidate extensions for position {frequent_position}"
+        )
         return [
             motive
             for motive in base_motives
-            if any(pos.position >= frequent_position for pos in motive.positions)
+            if (
+                any(pos.position >= frequent_position for pos in motive.positions)
+                and all(
+                    isinstance(unit, MotiveUnitInterval) for unit in motive.sequence
+                )
+            )
         ]
 
     def merge_motives(self, motive: Motive, candidate: Motive) -> Optional[Motive]:
+        logging.info(f"Merging motives {motive.sequence} and {candidate.sequence}")
+        logging.info(f"Number of positions in motive: {len(motive.positions)}")
+        logging.info(f"Number of positions in candidate: {len(candidate.positions)}")
 
-        new_positions = []
-        for position in motive.positions:
-            next_positions = []
-            for candidate_position in candidate.positions:
-                if position.position_in_work != candidate_position.position_in_work:
-                    continue
+        with ThreadPoolExecutor() as executor:
+            results = executor.map(
+                lambda p: self.process_positions(p, candidate.positions),
+                motive.positions,
+            )
 
-                gap = candidate_position.position - (
-                    position.position + position.length
-                )
-
-                starts_after_current_end = candidate_position.position >= (
-                    position.position + position.length
-                )
-
-                total_length = (
-                    candidate_position.position + candidate_position.length
-                ) - position.position
-
-                if (
-                    gap <= self.max_gap
-                    and starts_after_current_end
-                    and total_length <= self.max_length
-                ):
-                    next_positions.append(candidate_position)
-
-            if next_positions:
-                new_positions.append(
-                    MotivePosition(
-                        position=position.position,
-                        length=(next_positions[0].position - position.position)
-                        + next_positions[0].length,
-                        origin=position.origin,
-                        position_in_work=position.position_in_work,
-                    )
-                )
+        new_positions = [result for result in results if result is not None]
 
         if new_positions:
             position_sequence = PositionSequence(new_positions)
@@ -245,7 +236,46 @@ class MotiveGenerator:
             )
         return None
 
+    def process_positions(
+        self,
+        position: MotivePosition,
+        candidate_positions: list[MotivePosition],
+    ):
+        next_positions = []
+        for candidate_position in candidate_positions:
+            if position.position_in_work != candidate_position.position_in_work:
+                continue
+
+            gap = candidate_position.position - (position.position + position.length)
+            if gap > self.max_gap:
+                continue
+
+            starts_after_current_end = candidate_position.position >= (
+                position.position + position.length
+            )
+            if not starts_after_current_end:
+                continue
+
+            total_length = (
+                candidate_position.position + candidate_position.length
+            ) - position.position
+            if total_length > self.max_length:
+                continue
+
+            next_positions.append(candidate_position)
+
+        if next_positions:
+            return MotivePosition(
+                position=position.position,
+                length=(next_positions[0].position - position.position)
+                + next_positions[0].length,
+                origin=position.origin,
+                position_in_work=position.position_in_work,
+            )
+        return None
+
     def filter_motives(self, motives: List[Motive]) -> List[Motive]:
+        logging.info(f"Filtering motives: {len(motives)}")
 
         return [
             motive

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import List
 
 from music21 import stream, chord
+from music21.harmony import Harmony
 from music21.note import Rest, GeneralNote
 
 from Voice import Voice
@@ -16,6 +17,7 @@ class Part:
 
     @classmethod
     def parse(cls, part: Part21) -> "Part":
+        logging.info(f"Extracting part {part.id}")
         part.stripTies(inPlace=True)
 
         voices = extract_voices(part, extrac_voice_ids(part))
@@ -28,6 +30,8 @@ def extract_voices(part: Part21, voice_ids: List[str]):
     for i, measure in enumerate(part.getElementsByClass(stream.Measure)):
         if len(measure.voices) == 0:
             for note in measure.notesAndRests:
+                if isinstance(note, Harmony):
+                    continue
                 part_data[voice_ids[0]].append(use_only_highest_note(note))
             for voice in voice_ids[1:]:
                 part_data[voice].append(
@@ -45,11 +49,11 @@ def extrac_voice_ids(part: Part21) -> List[str]:
     voice_ids = []
     for measure in part.getElementsByClass(stream.Measure):
         for voice in measure.getElementsByClass(stream.Voice):
-            voice_ids.append(voice.id)
+            if voice.id not in voice_ids:
+                voice_ids.append(voice.id)
     if len(voice_ids) == 0:
         voice_ids.append("0")
 
-    logging.debug(f"Voice ids: {voice_ids}")
     return voice_ids
 
 
