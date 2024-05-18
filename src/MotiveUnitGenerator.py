@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from typing import List
 
@@ -24,7 +25,7 @@ class MotiveUnitGenerator:
     max_gap: int
 
     def from_corpus(self, corpus: Corpus):
-
+        logging.info("Generating motive units from corpus")
         motive_units = []
         for piece in corpus.pieces:
             for part in piece.parts:

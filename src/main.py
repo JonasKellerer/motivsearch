@@ -20,7 +20,6 @@ def main():
         parser_options.input_folder, parser_options.options
     )
 
-    write_motives_to_file(motives, parser_options.output_folder)
     write_motives_as_json_to_file(motives, parser_options.output_folder)
 
     for motive in motives:

@@ -25,6 +25,7 @@ class Corpus:
         return cls(pieces)
 
     def remove_accidentals(self):
+        logging.info("Removing accidentals from all pieces")
         for piece in self.pieces:
             for part in piece.parts:
                 for voice in part.voices:

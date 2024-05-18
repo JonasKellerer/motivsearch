@@ -18,6 +18,7 @@ class Piece:
         logging.info(f"Reading file {file}")
         score = converter.parse(file)
 
+        logging.info(f"Extracting parts from {file}")
         parts = [Part.parse(part) for part in score.parts]
 
         return cls(str(file), parts)
