@@ -1,131 +1,88 @@
 import logging
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
 
 from music21 import note
-from music21.interval import Interval
+from music21.interval import Interval as m21Interval
 
 from Corpus import Corpus
-from MotivePosition import PositionInWork
-from MotiveUnit import (
-    MotiveUnitBreak,
-    MotiveUnit,
-    MotiveUnitInterval,
-    Origin,
-    RestIntervalType,
-)
-from UnitSequence import UnitSequence
+from Motive import Motive
+from MotivePosition import MotivePosition
+from Origin import Origin
 from Voice import Voice
-from src.MainParser import ParseOption
+from GeneralInterval import Interval, RestIntervalType, BreakInterval
 
 
 @dataclass
 class MotiveUnitGenerator:
-    options: List[ParseOption]
-    max_gap: int
-
-    def from_corpus(self, corpus: Corpus):
+    @staticmethod
+    def from_corpus(corpus: Corpus) -> Dict[str, Dict[str, Dict[str, list[Motive]]]]:
         logging.info("Generating motive units from corpus")
-        motive_units = []
+        motive_units: Dict[str, Dict[str, Dict[str, list[Motive]]]] = {}
         for piece in corpus.pieces:
+            motive_units[piece.title] = {}
             for part in piece.parts:
+                motive_units[piece.title][part.id] = {}
                 for voice in part.voices:
-                    units = self.including_inverted_and_mirrored(
-                        voice, piece.title, part.id
+                    motive_units[piece.title][part.id][voice.id] = (
+                        MotiveUnitGenerator.original_from_voice(voice)
                     )
-                    motive_units += add_with_breaks(units, self.max_gap)
 
         return motive_units
 
-    def including_inverted_and_mirrored(
-        self, voice: Voice, piece_title: str, part_id: str
-    ):
-        original = self.original_from_voice(voice, piece_title, part_id)
-        inverted = get_inverted(original, self.options)
-        mirrored = get_mirrored(original, self.options)
+    @staticmethod
+    def original_from_voice(voice: Voice) -> List[Motive]:
 
-        return (
-            original
-            + add_with_breaks(inverted, self.max_gap)
-            + add_with_breaks(mirrored, self.max_gap)
-        )
-
-    def original_from_voice(
-        self, voice: Voice, piece_title: str, part_id: str
-    ) -> List[MotiveUnit]:
-
-        motive_units: List[MotiveUnit] = []
+        single_motives: List[Motive] = []
 
         for i, note_or_rest in enumerate(voice.notes):
             if i == len(voice.notes) - 1:
                 break
 
             origin = Origin(
-                piece_title=piece_title,
-                part_id=part_id,
-                voice_id=voice.id,
                 measure_number=note_or_rest.measureNumber,
                 note_number=i,
+            )
+            position = MotivePosition(
+                position=i,
+                length=1,
+                origin=origin,
             )
 
             if isinstance(note_or_rest, note.Note):
                 if isinstance(voice.notes[i + 1], note.Note):
-                    motive_units.append(
-                        MotiveUnitInterval(
-                            interval=Interval(
-                                note_or_rest, voice.notes[i + 1]
-                            ).generic.directed,
-                            origin=origin,
+                    m21_interval = m21Interval(
+                        note_or_rest, voice.notes[i + 1]
+                    ).generic.directed
+                    sequence = [Interval(m21_interval)]
+
+                    single_motives.append(
+                        Motive(
+                            sequence=sequence,
+                            positions=[position],
                         )
                     )
                 else:
-                    motive_units.append(
-                        MotiveUnitBreak(
-                            type=RestIntervalType.NOTE_BEFORE, origin=origin
+                    sequence = [BreakInterval(type=RestIntervalType.NOTE_BEFORE)]
+                    single_motives.append(
+                        Motive(
+                            sequence=sequence,
+                            positions=[position],
                         )
                     )
             else:
                 if isinstance(voice.notes[i + 1], note.Note):
-                    motive_units.append(
-                        MotiveUnitBreak(type=RestIntervalType.NOTE_AFTER, origin=origin)
+                    sequence = [BreakInterval(type=RestIntervalType.NOTE_AFTER)]
+                    single_motives.append(
+                        Motive(
+                            sequence=sequence,
+                            positions=[position],
+                        )
                     )
                 else:
-                    motive_units.append(
-                        MotiveUnitBreak(RestIntervalType.REST_BEFORE, origin)
+                    sequence = [BreakInterval(type=RestIntervalType.REST_BEFORE)]
+                    single_motives.append(
+                        Motive(sequence=sequence, positions=[position])
                     )
 
-        return motive_units
-
-
-def get_inverted(
-    motive_units: List[MotiveUnit], options: List[ParseOption]
-) -> List[MotiveUnit]:
-    if ParseOption.WITH_INVERTED in options:
-        return UnitSequence(motive_units).inverted().sequence
-    return []
-
-
-def get_mirrored(
-    motive_units: List[MotiveUnit], options: List[ParseOption]
-) -> List[MotiveUnit]:
-    if ParseOption.WITH_MIRRORED in options:
-        return UnitSequence(motive_units).mirrored_and_inverted().sequence
-    return []
-
-
-def get_breaks(max_gap: int) -> List[MotiveUnit]:
-    origin_outside = Origin("noWork", "noWork", "noWork", -1, -1)
-
-    return [
-        MotiveUnitBreak(
-            RestIntervalType.DIVIDER, origin_outside, PositionInWork.OUTSIDE
-        )
-        for _ in range(max_gap + 1)
-    ]
-
-
-def add_with_breaks(motive_units: List[MotiveUnit], max_gap: int) -> List[MotiveUnit]:
-    if len(motive_units) == 0:
-        return []
-
-    return get_breaks(max_gap) + motive_units
+        return single_motives
