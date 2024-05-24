@@ -20,5 +20,6 @@ class Piece:
 
         logging.info(f"Extracting parts from {file}")
         parts = [Part.parse(part) for part in score.parts]
+        title = file.stem
 
-        return cls(str(file), parts)
+        return cls(title, parts)

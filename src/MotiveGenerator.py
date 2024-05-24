@@ -4,12 +4,12 @@ from pathlib import Path
 from typing import List, Optional
 
 from Corpus import Corpus
+from GeneralInterval import Interval
 from Motive import Motive
-from MotivePosition import PositionInWork, MotivePosition
-from MotiveUnit import MotiveUnitInterval, MotiveUnit
+from MotiveList import MotiveList
+from MotivePosition import MotivePosition
 from MotiveUnitGenerator import MotiveUnitGenerator
 from PositionSequence import PositionSequence
-from UnitSequence import UnitSequence
 from src.MainParser import ParseOption
 
 
@@ -30,110 +30,48 @@ class MotiveGenerator:
 
     def discover_motives(
         self, file_path: Path, options: List[ParseOption]
-    ) -> List[Motive]:
+    ) -> MotiveList:
         logging.info(f"Discovering motives in {file_path}")
         corpus = Corpus.parse(file_path)
-        corpus.remove_accidentals()
 
-        motive_unit_generator = MotiveUnitGenerator(
-            options=options, max_gap=self.max_gap
-        )
-        motive_units = motive_unit_generator.from_corpus(corpus)
+        if ParseOption.USE_DIATONIC in options:
+            corpus.remove_accidentals()
 
-        motives = self.generate_motives(motive_units)
+        motive_unit_generator = MotiveUnitGenerator()
+        all_motive_units = motive_unit_generator.from_corpus(corpus)
 
-        motives = self.remove_motives_with_breaks(motives)
+        all_motives = MotiveList([])
+        for piece in all_motive_units:
+            for part in all_motive_units[piece]:
+                for voice in all_motive_units[piece][part]:
+                    motive_units = all_motive_units[piece][part][voice]
+                    motives = self.generate_motives(motive_units)
+                    motives = self.remove_motives_with_breaks(motives)
 
-        if ParseOption.WITH_INVERTED in options or ParseOption.WITH_MIRRORED in options:
-            motives = self.merge_inverted_and_mirrored(motives)
+                    all_motives.add(motives)
 
-        # if (
-        #     ParseOption.WITH_INVERTED in options
-        #     and ParseOption.WITH_MIRRORED in options
-        # ):
-        #     motives = self.remove_motives_only_in_mirrored_and_inverted(motives)
-
-        return motives
+        return all_motives
 
     def remove_motives_with_breaks(self, motives: List[Motive]) -> List[Motive]:
         return [
             motive
             for motive in motives
-            if all(
-                isinstance(motive_unit, MotiveUnitInterval)
-                for motive_unit in motive.sequence
-            )
-        ]
-
-    def merge_inverted_and_mirrored(self, motives: List[Motive]) -> List[Motive]:
-        unique_motives: List[Motive] = []
-        for motive in motives:
-            sequence = motive.sequence
-            if len(unique_motives) == 0:
-                unique_motives.append(motive)
-                continue
-
-            merged = False
-            for unique_motive in unique_motives:
-                if UnitSequence(unique_motive.sequence).is_equal_mirrored_or_inverted(
-                    UnitSequence(sequence)
-                ):
-                    original, to_merge = self.switch_original_and_to_merge(
-                        unique_motive, motive
-                    )
-
-                    original_position_sequence = PositionSequence(original.positions)
-
-                    original_position_sequence.merge(
-                        PositionSequence(to_merge.positions)
-                    )
-                    unique_motive.positions = original_position_sequence.sequence
-                    unique_motive.frequency = len(original_position_sequence.sequence)
-                    unique_motive.sequence = original.sequence
-
-                    merged = True
-                    break
-            if not merged:
-                unique_motives.append(motive)
-
-        return unique_motives
-
-    def switch_original_and_to_merge(
-        self, original: Motive, to_merge: Motive
-    ) -> tuple[Motive, Motive]:
-        if (
-            to_merge.positions[0].position_in_work == PositionInWork.ORIGINAL
-            and original.positions[0].position_in_work != PositionInWork.ORIGINAL
-        ):
-            return to_merge, original
-
-        return original, to_merge
-
-    def remove_motives_only_in_mirrored_and_inverted(
-        self, motives: List[Motive]
-    ) -> List[Motive]:
-        return [
-            motive
-            for motive in motives
-            if any(
-                position.position_in_work == PositionInWork.ORIGINAL
-                for position in motive.positions
-            )
+            if all(isinstance(motive_unit, Interval) for motive_unit in motive.sequence)
         ]
 
     def generate_motives(
         self,
-        sequence: List[MotiveUnit],
+        sequence: List[Motive],
     ) -> List[Motive]:
         logging.info("Generating motives")
         basic_motives = self.get_basic_motives(sequence)
         motives_of_all_iterations = []
 
-        current_motive = self.get_initial_motives(basic_motives.copy())
+        current_motive = basic_motives.copy()
 
         while current_motive:
             logging.info(f"Current motives: {len(current_motive)}")
-            new_motives = []
+            new_motives: List[Motive] = []
             for motive in current_motive:
                 logging.info(f"Current motive: {motive.sequence}")
                 frequent_position = self.get_frequent_position(motive)
@@ -145,7 +83,7 @@ class MotiveGenerator:
                     merged = self.merge_motives(motive, candidate)
                     if merged is not None:
                         new_motives.append(merged)
-            current_motive = self.filter_motives(new_motives)
+            current_motive = new_motives
 
             motives_to_add_to_all_iterations = [
                 motive
@@ -157,44 +95,34 @@ class MotiveGenerator:
             )
             motives_of_all_iterations.extend(motives_to_add_to_all_iterations)
 
+            if any(
+                len(motive.sequence) >= self.max_num_sequences
+                for motive in current_motive
+            ):
+                break
+
         return motives_of_all_iterations
 
-    def get_initial_motives(self, motives: List[Motive]) -> List[Motive]:
-        logging.info("Getting initial motives. Removing motives with breaks.")
-        return [
-            motive
-            for motive in motives
-            if all(isinstance(unit, MotiveUnitInterval) for unit in motive.sequence)
-        ]
-
-    def get_basic_motives(self, sequence: List[MotiveUnit]) -> List[Motive]:
+    def get_basic_motives(self, sequence: List[Motive]) -> List[Motive]:
         logging.info("Getting basic motives")
         basic_motives: dict[str, Motive] = {}
-        for index, unit in enumerate(sequence):
-            if unit.name not in basic_motives:
-                basic_motives[unit.name] = Motive([], 0, [unit])
-            basic_motives[unit.name].positions.append(
+        for index, motive in enumerate(sequence):
+            name = motive.sequence[0].name
+            if name not in basic_motives:
+                basic_motives[name] = Motive(sequence=motive.sequence, positions=[])
+            basic_motives[name].positions.append(
                 MotivePosition(
                     position=index,
                     length=1,
-                    origin=unit.origin,
-                    position_in_work=unit.position_in_work,
+                    origin=motive.positions[0].origin,
                 )
             )
-            basic_motives[unit.name].frequency += 1
         logging.info(f"Found {len(basic_motives)} basic motives")
 
-        return [
-            motive
-            for motive in basic_motives.values()
-            if motive.frequency >= self.min_frequency
-        ]
+        return [motive for motive in basic_motives.values()]
 
     def get_frequent_position(self, motive: Motive) -> int:
-        return (
-            motive.positions[self.min_frequency - 1].position
-            + motive.positions[self.min_frequency - 1].length
-        )
+        return motive.positions[0].position + motive.positions[0].length
 
     def generate_candidate_extension(
         self, base_motives: List[Motive], frequent_position: int
@@ -205,12 +133,7 @@ class MotiveGenerator:
         return [
             motive
             for motive in base_motives
-            if (
-                any(pos.position >= frequent_position for pos in motive.positions)
-                and all(
-                    isinstance(unit, MotiveUnitInterval) for unit in motive.sequence
-                )
-            )
+            if any(pos.position >= frequent_position for pos in motive.positions)
         ]
 
     def merge_motives(self, motive: Motive, candidate: Motive) -> Optional[Motive]:
@@ -231,7 +154,6 @@ class MotiveGenerator:
 
             return Motive(
                 positions=position_sequence.sequence,
-                frequency=len(position_sequence.sequence),
                 sequence=motive.sequence + candidate.sequence,
             )
         return None
@@ -243,9 +165,6 @@ class MotiveGenerator:
     ):
         next_positions = []
         for candidate_position in candidate_positions:
-            if position.position_in_work != candidate_position.position_in_work:
-                continue
-
             gap = candidate_position.position - (position.position + position.length)
             if gap > self.max_gap:
                 continue
@@ -270,16 +189,6 @@ class MotiveGenerator:
                 length=(next_positions[0].position - position.position)
                 + next_positions[0].length,
                 origin=position.origin,
-                position_in_work=position.position_in_work,
             )
+
         return None
-
-    def filter_motives(self, motives: List[Motive]) -> List[Motive]:
-        logging.info(f"Filtering motives: {len(motives)}")
-
-        return [
-            motive
-            for motive in motives
-            if motive.frequency >= self.min_frequency
-            and len(motive.sequence) <= self.max_num_sequences
-        ]

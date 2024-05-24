@@ -9,7 +9,7 @@ class PieceTest(unittest.TestCase):
         filename = "testData/parsing/basic/multiple_voices_in_one_part.musicxml"
         piece = Piece.parse(file=Path(filename))
 
-        self.assertEqual(piece.title, filename)
+        self.assertEqual(piece.title, "multiple_voices_in_one_part")
 
         notesOfFirstVoice = [
             "C in octave 4 Quarter Note",
@@ -47,7 +47,7 @@ class PieceTest(unittest.TestCase):
         filename = "testData/parsing/basic/multiple_parts.musicxml"
         piece = Piece.parse(file=Path(filename))
 
-        self.assertEqual(piece.title, filename)
+        self.assertEqual(piece.title, "multiple_parts")
 
         notesOfFirstPart = [
             "C in octave 4 Quarter Note",
@@ -86,7 +86,7 @@ class PieceTest(unittest.TestCase):
         filename = "testData/parsing/basic/multiple_parts_multiple_voices.musicxml"
         piece = Piece.parse(file=Path(filename))
 
-        self.assertEqual(piece.title, filename)
+        self.assertEqual(piece.title, "multiple_parts_multiple_voices")
 
         notesOfFirstVoice = [
             "C in octave 4 Quarter Note",
@@ -140,7 +140,7 @@ class PieceTest(unittest.TestCase):
         filename = "testData/parsing/basic/one_accord_per_note.musicxml"
         piece = Piece.parse(file=Path(filename))
 
-        self.assertEqual(piece.title, filename)
+        self.assertEqual(piece.title, "one_accord_per_note")
 
         notesOfFirstVoice = [
             "C in octave 4 Quarter Note",
@@ -163,7 +163,7 @@ class PieceTest(unittest.TestCase):
         filename = "testData/parsing/basic/ties.musicxml"
         piece = Piece.parse(file=Path(filename))
 
-        self.assertEqual(piece.title, filename)
+        self.assertEqual(piece.title, "ties")
 
         notesOfFirstVoice = [
             "C in octave 4 Half Note",

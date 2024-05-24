@@ -1,18 +1,19 @@
 from dataclasses import dataclass
 from typing import List
 
-from MotiveUnit import MotiveUnit
+from GeneralInterval import GeneralInterval
 
 
 @dataclass
 class UnitSequence:
-    sequence: List[MotiveUnit]
+    sequence: List[GeneralInterval]
 
     def inverted(self):
         return UnitSequence([unit.inverted() for unit in self.sequence])
 
     def mirrored(self):
         mirrored = [unit.mirrored() for unit in self.sequence]
+
         return UnitSequence(mirrored[::-1])
 
     def mirrored_and_inverted(self):

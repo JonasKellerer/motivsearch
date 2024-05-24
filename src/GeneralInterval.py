@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-
-from Origin import Origin
-from PositionInWork import PositionInWork
+from typing import List
 
 
 class RestIntervalType(str, Enum):
@@ -17,9 +15,7 @@ class RestIntervalType(str, Enum):
 
 
 @dataclass(eq=True, frozen=True)
-class MotiveUnit(ABC):
-    _position_in_work: PositionInWork
-    _origin: Origin
+class GeneralInterval(ABC):
 
     @property
     @abstractmethod
@@ -27,34 +23,23 @@ class MotiveUnit(ABC):
         pass
 
     @abstractmethod
-    def inverted(self):
+    def inverted(self) -> "GeneralInterval":
         pass
 
     @abstractmethod
-    def mirrored(self):
+    def mirrored(self) -> "GeneralInterval":
         pass
-
-    @property
-    def origin(self) -> Origin:
-        return self._origin
-
-    @property
-    def position_in_work(self) -> PositionInWork:
-        return self._position_in_work
 
 
 @dataclass(eq=True, frozen=True)
-class MotiveUnitBreak(MotiveUnit):
+class BreakInterval(GeneralInterval):
 
     _type: RestIntervalType
 
     def __init__(
         self,
         type: RestIntervalType,
-        origin: Origin,
-        position_in_work: PositionInWork = PositionInWork.ORIGINAL,
     ):
-        super().__init__(_origin=origin, _position_in_work=position_in_work)
         object.__setattr__(self, "_type", type)
 
     @property
@@ -68,32 +53,22 @@ class MotiveUnitBreak(MotiveUnit):
         return str(self._type)
 
     def inverted(self):
-        return MotiveUnitBreak(
-            type=self._type,
-            origin=self.origin,
-            position_in_work=PositionInWork.INVERTED,
-        )
+        return BreakInterval(type=self._type)
 
     def mirrored(self):
-        return MotiveUnitBreak(
+        return BreakInterval(
             type=self._type,
-            origin=self.origin,
-            position_in_work=PositionInWork.MIRRORED,
         )
 
 
 @dataclass(eq=True, frozen=True)
-class MotiveUnitInterval(MotiveUnit):
-
+class Interval(GeneralInterval):
     _interval: int
 
     def __init__(
         self,
         interval: int,
-        origin: Origin,
-        position_in_work: PositionInWork = PositionInWork.ORIGINAL,
     ):
-        super().__init__(_origin=origin, _position_in_work=position_in_work)
         object.__setattr__(self, "_interval", interval)
 
     @property
@@ -109,15 +84,28 @@ class MotiveUnitInterval(MotiveUnit):
     def inverted(self):
         inverted_interval = 1 if self._interval == 1 else -self._interval
 
-        return MotiveUnitInterval(
+        return Interval(
             interval=inverted_interval,
-            origin=self.origin,
-            position_in_work=PositionInWork.INVERTED,
         )
 
     def mirrored(self):
-        return MotiveUnitInterval(
+        return Interval(
             interval=self._interval,
-            origin=self.origin,
-            position_in_work=PositionInWork.MIRRORED,
         )
+
+
+@dataclass
+class IntervalList:
+    intervals: List[GeneralInterval]
+
+    def inverted(self) -> "IntervalList":
+        return IntervalList([interval.inverted() for interval in self.intervals])
+
+    def mirrored(self) -> "IntervalList":
+        return IntervalList(self.intervals[::-1])
+
+    def mirrored_inverted(self) -> "IntervalList":
+        return IntervalList(self.intervals[::-1]).inverted()
+
+    def __str__(self):
+        return str([interval.name for interval in self.intervals])
