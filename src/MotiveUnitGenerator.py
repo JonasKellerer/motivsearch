@@ -6,11 +6,10 @@ from music21 import note
 from music21.interval import Interval as m21Interval
 
 from Corpus import Corpus
+from GeneralInterval import Interval, RestIntervalType, BreakInterval
 from Motive import Motive
 from MotivePosition import MotivePosition
-from Origin import Origin
 from Voice import Voice
-from GeneralInterval import Interval, RestIntervalType, BreakInterval
 
 
 @dataclass
@@ -39,14 +38,9 @@ class MotiveUnitGenerator:
             if i == len(voice.notes) - 1:
                 break
 
-            origin = Origin(
-                measure_number=note_or_rest.measureNumber,
-                note_number=i,
-            )
             position = MotivePosition(
                 position=i,
                 length=1,
-                origin=origin,
             )
 
             if isinstance(note_or_rest, note.Note):
