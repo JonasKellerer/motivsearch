@@ -4,10 +4,11 @@ from pathlib import Path
 from typing import List
 
 from Motive import Motive
-from MotivePosition import PositionInWork
+from MotiveList import MotiveList
+from SequenceType import SequenceType
 
 
-def write_motives_as_json_to_file(motives: List[Motive], output_folder: Path):
+def write_motives_as_json_to_file(motives: MotiveList, output_folder: Path):
     if not output_folder.exists():
         output_folder.mkdir()
 
@@ -33,20 +34,20 @@ def write_motives_to_file(motives: List[Motive], output_folder: Path):
         for motive in motives:
             original_positions = list(
                 filter(
-                    lambda pos: pos.position_in_work == PositionInWork.ORIGINAL,
+                    lambda pos: pos.position_in_work == SequenceType.ORIGINAL,
                     motive.positions,
                 )
             )
 
             inverted_positions = list(
                 filter(
-                    lambda pos: pos.position_in_work == PositionInWork.INVERTED,
+                    lambda pos: pos.position_in_work == SequenceType.INVERTED,
                     motive.positions,
                 )
             )
             mirrored_positions = list(
                 filter(
-                    lambda pos: pos.position_in_work == PositionInWork.MIRRORED,
+                    lambda pos: pos.position_in_work == SequenceType.MIRRORED,
                     motive.positions,
                 )
             )

@@ -14,7 +14,7 @@
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/main.py" />
-    <option name="PARAMETERS" value="--inputFolder production/errors --outputFolder production/errors --minFrequency 1 --maxGap 0 --minNumSequences 3 --maxNumSequences 3 --maxLength 3 --withInverted --withMirrored --useDiatonic" />
+    <option name="PARAMETERS" value="--inputFolder production/subSample --outputFolder production/subSample --minFrequency 1 --maxGap 0 --minNumSequences 3 --maxNumSequences 3 --maxLength 3 --useDiatonic" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

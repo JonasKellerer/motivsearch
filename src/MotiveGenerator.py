@@ -42,17 +42,21 @@ class MotiveGenerator:
 
         all_motives = MotiveList([])
         for piece in all_motive_units:
+            logging.info(f"Processing piece {piece}")
             for part in all_motive_units[piece]:
+                logging.info(f"Processing part {part}")
                 for voice in all_motive_units[piece][part]:
+                    logging.info(f"Processing voice {voice}")
                     motive_units = all_motive_units[piece][part][voice]
                     motives = self.generate_motives(motive_units)
                     motives = self.remove_motives_with_breaks(motives)
 
-                    all_motives.add(motives)
+                    all_motives.add(motives, piece, part, voice)
 
         return all_motives
 
     def remove_motives_with_breaks(self, motives: List[Motive]) -> List[Motive]:
+        logging.info("Removing motives with breaks")
         return [
             motive
             for motive in motives
@@ -111,11 +115,7 @@ class MotiveGenerator:
             if name not in basic_motives:
                 basic_motives[name] = Motive(sequence=motive.sequence, positions=[])
             basic_motives[name].positions.append(
-                MotivePosition(
-                    position=index,
-                    length=1,
-                    origin=motive.positions[0].origin,
-                )
+                MotivePosition(position=index, length=1)
             )
         logging.info(f"Found {len(basic_motives)} basic motives")
 
@@ -188,7 +188,6 @@ class MotiveGenerator:
                 position=position.position,
                 length=(next_positions[0].position - position.position)
                 + next_positions[0].length,
-                origin=position.origin,
             )
 
         return None

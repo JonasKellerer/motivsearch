@@ -1,5 +1,6 @@
+import logging
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Any
 
 from GeneralInterval import IntervalList
 from Motive import Motive
@@ -41,36 +42,60 @@ class IntervalClasses:
 @dataclass
 class ResultMotive:
     intervals: IntervalClasses
-    positions: Dict[SequenceType, List[MotivePosition]]
+    positions: Dict[SequenceType, Dict[str, Dict[str, Dict[str, List[MotivePosition]]]]]
 
     def __init__(self, intervals: IntervalClasses):
         self.intervals = intervals
         self.positions = {
-            SequenceType.ORIGINAL: [],
-            SequenceType.INVERTED: [],
-            SequenceType.MIRRORED: [],
-            SequenceType.MIRRORED_INVERTED: [],
+            SequenceType.ORIGINAL: {},
+            SequenceType.INVERTED: {},
+            SequenceType.MIRRORED: {},
+            SequenceType.MIRRORED_INVERTED: {},
         }
 
     def get_sequence_type(self, motive: Motive) -> SequenceType or None:
         interval_list = IntervalList(intervals=motive.sequence)
         return self.intervals.get_sequence_type(interval_list)
 
-    def add(self, motive: Motive, sequence_type: SequenceType):
-        self.positions[sequence_type].extend(motive.positions)
+    def add(
+        self,
+        motive: Motive,
+        sequence_type: SequenceType,
+        piece_title: str,
+        part_id: str,
+        voice_id: str,
+    ):
+        self.positions[sequence_type].setdefault(piece_title, {}).setdefault(
+            part_id, {}
+        ).setdefault(voice_id, []).extend(motive.positions)
 
-    def frequency(self, sequenceType: SequenceType or None = None) -> int:
-        if sequenceType is None:
-            return sum(len(positions) for positions in self.positions.values())
+    def frequency(self, sequence_type: SequenceType or None = None) -> int:
+        if sequence_type is None:
+            return count_elements_in_lists(self.positions)
 
-        return len(self.positions[sequenceType])
+        return count_elements_in_lists(self.positions[sequence_type])
+
+
+def count_elements_in_lists(d: Any) -> int:
+    if isinstance(d, list):
+        return len(d)
+    elif isinstance(d, dict):
+        return sum(count_elements_in_lists(v) for v in d.values())
+    return 0
 
 
 @dataclass
 class MotiveList:
     motives: List[ResultMotive]
 
-    def add(self, candidate_motives: List[Motive]):
+    def add(
+        self,
+        candidate_motives: List[Motive],
+        piece_title: str,
+        part_id: str,
+        voice_id: str,
+    ):
+        logging.info(f"Adding {len(candidate_motives)} candidate motives")
         for candidate_motive in candidate_motives:
             if len(self.motives) == 0:
                 result_motive = ResultMotive(
@@ -78,7 +103,13 @@ class MotiveList:
                         IntervalList(intervals=candidate_motive.sequence)
                     )
                 )
-                result_motive.add(candidate_motive, SequenceType.ORIGINAL)
+                result_motive.add(
+                    candidate_motive,
+                    SequenceType.ORIGINAL,
+                    piece_title,
+                    part_id,
+                    voice_id,
+                )
 
                 self.motives.append(result_motive)
                 continue
@@ -88,7 +119,13 @@ class MotiveList:
                 sequence_type = existing_motive.get_sequence_type(candidate_motive)
 
                 if sequence_type is not None:
-                    existing_motive.add(candidate_motive, sequence_type)
+                    existing_motive.add(
+                        candidate_motive,
+                        sequence_type,
+                        piece_title,
+                        part_id,
+                        voice_id,
+                    )
                     found_existing_motive = True
                     break
 
@@ -98,7 +135,13 @@ class MotiveList:
                         IntervalList(intervals=candidate_motive.sequence)
                     )
                 )
-                result_motive.add(candidate_motive, SequenceType.ORIGINAL)
+                result_motive.add(
+                    candidate_motive,
+                    SequenceType.ORIGINAL,
+                    piece_title,
+                    part_id,
+                    voice_id,
+                )
 
                 self.motives.append(result_motive)
 

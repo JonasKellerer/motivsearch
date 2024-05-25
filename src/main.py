@@ -1,7 +1,7 @@
 import logging
 
 from MotiveGenerator import MotiveGenerator
-from MotiveWriter import write_motives_to_file, write_motives_as_json_to_file
+from MotiveWriter import write_motives_as_json_to_file
 from src.MainParser import parse_args
 
 
@@ -22,8 +22,7 @@ def main():
 
     write_motives_as_json_to_file(motives, parser_options.output_folder)
 
-    for motive in motives:
-        print(motive)
+    logging.info("Done")
 
 
 if __name__ == "__main__":

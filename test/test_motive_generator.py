@@ -2,10 +2,7 @@ import unittest
 from pathlib import Path
 
 from MainParser import ParseOption
-from Motive import Motive
 from MotiveGenerator import MotiveGenerator
-from MotivePosition import MotivePosition
-from Origin import Origin
 from SequenceType import SequenceType
 
 
@@ -523,4 +520,7 @@ class MotiveGeneratorTest_DiscoverMotives(unittest.TestCase):
 
         for i, expected_motive in enumerate(expected_motives):
             self.assertEqual(motives[i].frequency(), expected_motive["frequency"])
-            self.assertEqual(motives[i].intervals.name(SequenceType.ORIGINAL), expected_motive["sequence"])
+            self.assertEqual(
+                motives[i].intervals.name(SequenceType.ORIGINAL),
+                expected_motive["sequence"],
+            )
