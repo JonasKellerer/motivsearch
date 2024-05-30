@@ -102,10 +102,10 @@ class IntervalList:
         return IntervalList([interval.inverted() for interval in self.intervals])
 
     def mirrored(self) -> "IntervalList":
-        return IntervalList(self.intervals[::-1])
+        return IntervalList(self.intervals[::-1]).inverted()
 
     def mirrored_inverted(self) -> "IntervalList":
-        return IntervalList(self.intervals[::-1]).inverted()
+        return IntervalList(self.intervals[::-1])
 
     def __str__(self):
         return str([interval.name for interval in self.intervals])
