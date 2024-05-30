@@ -1,5 +1,6 @@
 import argparse
 import logging
+from cmath import sqrt
 from pathlib import Path
 
 import matplotlib
@@ -187,22 +188,113 @@ def main():
             "in_n_pieces": in_n_pieces,
         }
 
-    logging.info("Calculating relative frequencies")
-    frequency_per_piece = {}
+    motives_in_piece = {}
     for piece in all_pieces:
-        frequency_per_piece[piece] = sum(
+        motives_in_piece[piece] = sum(
             [motives[motive]["frequency_per_piece"].get(piece, 0) for motive in motives]
         )
-        print(f"{piece}: {frequency_per_piece[piece]}")
 
+    number_of_pieces = len(all_pieces)
+    logging.info(f"Number of pieces: {number_of_pieces}")
+
+    number_of_motive_classes = len(motives)
+    logging.info(f"Number of motive classes: {number_of_motive_classes}")
+
+    mean_motives_in_piece = sum(motives_in_piece.values()) / number_of_pieces
+    logging.info(f"Mean number of motives in piece: {mean_motives_in_piece}")
+
+    logging.info("Calculating relative frequencies")
     for motive in motives:
         relative_frequency_per_piece = {}
         for piece in all_pieces:
             relative_frequency_per_piece[piece] = (
                 motives[motive]["frequency_per_piece"].get(piece, 0)
-                / frequency_per_piece[piece]
+                / motives_in_piece[piece]
             )
         motives[motive]["relative_frequency_per_piece"] = relative_frequency_per_piece
+        motives[motive]["mean_relative_frequency"] = (
+            sum(relative_frequency_per_piece.values()) / number_of_pieces
+        )
+        motives[motive]["standard_derivation_relative_frequency"] = (
+            sqrt(
+                sum(
+                    [
+                        (
+                            relative_frequency_per_piece[piece]
+                            - motives[motive]["mean_relative_frequency"]
+                        )
+                        ** 2
+                        for piece in all_pieces
+                    ]
+                )
+            )
+            / number_of_pieces
+        ).real
+
+    logging.info("Calculating number of motive classes per piece")
+    motive_classes_per_piece = {}
+    for piece in all_pieces:
+        motive_classes_per_piece[piece] = sum(
+            [
+                1
+                for motive in motives
+                if motives[motive]["frequency_per_piece"].get(piece, 0) > 0
+            ]
+        )
+    mean_number_of_motive_classes_per_piece = (
+        sum(motive_classes_per_piece.values()) / number_of_pieces
+    )
+    logging.info(
+        f"Mean number of motive classes per piece: {mean_number_of_motive_classes_per_piece}"
+    )
+
+    standard_derivation_number_of_motive_classes_per_piece = sqrt(
+        sum(
+            [
+                (
+                    motive_classes_per_piece[piece]
+                    - mean_number_of_motive_classes_per_piece
+                )
+                ** 2
+                for piece in all_pieces
+            ]
+        )
+    ).real
+    logging.info(
+        f"Standard derivation number of motive classes per piece: {standard_derivation_number_of_motive_classes_per_piece}"
+    )
+
+    correlation_nominator = sum(
+        [
+            (motives_in_piece[piece] - mean_motives_in_piece)
+            * (
+                motive_classes_per_piece[piece]
+                - mean_number_of_motive_classes_per_piece
+            )
+            for piece in all_pieces
+        ]
+    )
+    correlation_denominator = sqrt(
+        sum(
+            [
+                (motives_in_piece[piece] - mean_motives_in_piece) ** 2
+                for piece in all_pieces
+            ]
+        )
+        * sum(
+            [
+                (
+                    motive_classes_per_piece[piece]
+                    - mean_number_of_motive_classes_per_piece
+                )
+                ** 2
+                for piece in all_pieces
+            ]
+        )
+    ).real
+
+    correlation = correlation_nominator / correlation_denominator
+    logging.info(f"Correlation: {correlation}")
 
     logging.info("Sorting motives")
     # sort by frequency
@@ -223,9 +315,11 @@ def main():
         "frequency_mirrored",
         "frequency_mirrored_inverted",
         "in_n_pieces",
+        "mean_relative_frequency",
+        "standard_derivation_relative_frequency",
     ]
-    piece_columns = [f"frequency_{piece}" for piece in sorted(all_pieces)]
-    columns.extend(piece_columns)
+    frequency_per_piece_columns = [f"frequency_{piece}" for piece in sorted(all_pieces)]
+    columns.extend(frequency_per_piece_columns)
 
     relative_frequency_per_piece_columns = [
         f"relative_frequency_{piece}" for piece in sorted(all_pieces)
@@ -245,6 +339,8 @@ def main():
             value["frequency_per_sequence_type"]["mirrored"],
             value["frequency_per_sequence_type"]["mirrored_inverted"],
             value["in_n_pieces"],
+            value["mean_relative_frequency"],
+            value["standard_derivation_relative_frequency"],
         ]
         # Add frequencies for each piece
         for piece in sorted(all_pieces):
@@ -252,6 +348,7 @@ def main():
 
         for piece in sorted(all_pieces):
             row.append(value["relative_frequency_per_piece"].get(piece, 0))
+
         rows.append(row)
 
     df = pd.DataFrame(rows, columns=columns)
