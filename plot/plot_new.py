@@ -37,6 +37,11 @@ def main():
     all_pieces = set()
 
     for i, entry in data.iterrows():
+        for sequence_type in entry["positions"]:
+            for piece in entry["positions"][sequence_type]:
+                all_pieces.add(piece)
+
+    for i, entry in data.iterrows():
         intervals = entry["intervals"]
 
         intervals_original = [
@@ -156,7 +161,6 @@ def main():
             for piece in entry["positions"][sequence_type]:
                 if piece not in frequency_per_piece:
                     frequency_per_piece[piece] = 0
-                all_pieces.add(piece)
 
                 for part in entry["positions"][sequence_type][piece]:
                     for voice in entry["positions"][sequence_type][piece][part]:
@@ -169,6 +173,10 @@ def main():
                         )
 
                         frequency_per_piece[piece] += len(positions)
+
+        for piece in all_pieces:
+            if piece not in frequency_per_piece:
+                frequency_per_piece[piece] = 0
 
         in_n_pieces = 0
         for frequency in frequency_per_piece.values():
@@ -248,18 +256,21 @@ def main():
         f"Mean number of motive classes per piece: {mean_number_of_motive_classes_per_piece}"
     )
 
-    standard_derivation_number_of_motive_classes_per_piece = sqrt(
-        sum(
-            [
-                (
-                    motive_classes_per_piece[piece]
-                    - mean_number_of_motive_classes_per_piece
-                )
-                ** 2
-                for piece in all_pieces
-            ]
-        )
-    ).real
+    standard_derivation_number_of_motive_classes_per_piece = (
+        sqrt(
+            sum(
+                [
+                    (
+                        motive_classes_per_piece[piece]
+                        - mean_number_of_motive_classes_per_piece
+                    )
+                    ** 2
+                    for piece in all_pieces
+                ]
+            )
+        ).real
+        / number_of_pieces
+    )
     logging.info(
         f"Standard derivation number of motive classes per piece: {standard_derivation_number_of_motive_classes_per_piece}"
     )
@@ -296,6 +307,27 @@ def main():
     correlation = correlation_nominator / correlation_denominator
     logging.info(f"Correlation: {correlation}")
 
+    # Gewichtete Arithmetische Mittel
+    total_number_of_motives = sum([motives_in_piece[piece] for piece in all_pieces])
+
+    weighted_arithmetic_mean_per_motive = {}
+
+    for motive in motives:
+        frequency_per_piece = motives[motive]["frequency_per_piece"]
+
+        weighted_arithmetic_mean_per_motive[motive] = (
+            sum(
+                [
+                    frequency_per_piece[piece] * motives_in_piece[piece]
+                    for piece in all_pieces
+                ]
+            )
+            / total_number_of_motives
+        )
+        motives[motive]["weighted_arithmetic_mean"] = (
+            weighted_arithmetic_mean_per_motive[motive]
+        )
+
     logging.info("Sorting motives")
     # sort by frequency
     motives = dict(
@@ -317,6 +349,7 @@ def main():
         "in_n_pieces",
         "mean_relative_frequency",
         "standard_derivation_relative_frequency",
+        "weighted_arithmetic_mean",
     ]
     frequency_per_piece_columns = [f"frequency_{piece}" for piece in sorted(all_pieces)]
     columns.extend(frequency_per_piece_columns)
@@ -341,6 +374,7 @@ def main():
             value["in_n_pieces"],
             value["mean_relative_frequency"],
             value["standard_derivation_relative_frequency"],
+            value["weighted_arithmetic_mean"],
         ]
         # Add frequencies for each piece
         for piece in sorted(all_pieces):
