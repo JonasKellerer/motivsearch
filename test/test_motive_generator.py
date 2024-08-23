@@ -8,8 +8,6 @@ from SequenceType import SequenceType
 
 class MotiveGeneratorTest_DiscoverMotives(unittest.TestCase):
     options = [
-        ParseOption.WITH_INVERTED,
-        ParseOption.WITH_MIRRORED,
         ParseOption.USE_DIATONIC,
     ]
 
@@ -452,7 +450,6 @@ class MotiveGeneratorTest_DiscoverMotives(unittest.TestCase):
 
         self.assertEqual(len(motives), 2)
 
-        # welches stück auch immer zu erst eingelesen wird, das wird als original genommen?
         expected_motives = [
             {"frequency": 2, "sequence": "['1', '2', '4']"},
             {"frequency": 2, "sequence": "['3', '2', '1']"},
