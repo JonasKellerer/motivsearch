@@ -5,9 +5,7 @@ from pathlib import Path
 
 
 class ParseOption(Enum):
-    WITH_INVERTED = 1
-    WITH_MIRRORED = 2
-    USE_DIATONIC = 3
+    USE_DIATONIC = 1
 
     def __eq__(self, other):
         if type(self).__qualname__ != type(other).__qualname__:
@@ -56,12 +54,6 @@ def parse_args() -> (MotiveGeneratorOptions, ParserOptions):
     )
     parser.add_argument("--maxLength", type=int, help="Maximum length of a motive")
     parser.add_argument(
-        "--withInverted", action="store_true", help="Searches also for inverted motives"
-    )
-    parser.add_argument(
-        "--withMirrored", action="store_true", help="Searches also for mirrored motives"
-    )
-    parser.add_argument(
         "--useDiatonic", action="store_true", help="Use diatonic intervals"
     )
 
@@ -77,8 +69,6 @@ def parse_args() -> (MotiveGeneratorOptions, ParserOptions):
         Path(args.inputFolder),
         Path(args.outputFolder),
         [
-            ParseOption.WITH_INVERTED if args.withInverted else None,
-            ParseOption.WITH_MIRRORED if args.withMirrored else None,
             ParseOption.USE_DIATONIC if args.useDiatonic else None,
         ],
     )
