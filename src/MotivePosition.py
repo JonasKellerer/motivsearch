@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 
-from Origin import Origin
-
 
 @dataclass
 class MotivePosition:
