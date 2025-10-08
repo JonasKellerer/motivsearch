@@ -1,14 +1,14 @@
 import logging
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from music21 import stream, chord
 from music21.harmony import Harmony
 from music21.note import Rest, GeneralNote
 
+from ParseOptions import ParseOptions
 from Voice import Voice
 from music21.stream import Part as Part21
-
 
 @dataclass
 class Part:
@@ -16,11 +16,19 @@ class Part:
     voices: List[Voice]
 
     @classmethod
-    def parse(cls, part: Part21) -> "Part":
+    def parse(cls, part: Part21, options: Optional[ParseOptions] = None) -> "Part":
+        if options is None:
+            options = ParseOptions()
+
         logging.info(f"Extracting part {part.id}")
         part.stripTies(inPlace=True)
 
         voices = extract_voices(part, extrac_voice_ids(part))
+
+        logging.debug(f"Removing rests from {part.id} which are shorter than {options.rest_treatment}")
+        for voice in voices:
+            voice.remove_rests(options.rest_treatment)
+
         return cls(part.id, voices)
 
 

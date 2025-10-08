@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
+from ParseOptions import ParseOptions, RestTreatment, AccidentalTreatment, ChordTreatment
+
 
 class ParseOption(Enum):
     USE_DIATONIC = 1
@@ -29,7 +31,7 @@ class MotiveGeneratorOptions:
 class ParserOptions:
     input_folder: Path
     output_folder: Path
-    options: list[ParseOption]
+    options: ParseOptions = ParseOptions()
 
 
 def parse_args() -> (MotiveGeneratorOptions, ParserOptions):
@@ -53,8 +55,30 @@ def parse_args() -> (MotiveGeneratorOptions, ParserOptions):
         "--maxNumSequences", type=int, help="Maximum number of sequences"
     )
     parser.add_argument("--maxLength", type=int, help="Maximum length of a motive")
+
     parser.add_argument(
         "--useDiatonic", action="store_true", help="Use diatonic intervals"
+    )
+
+    parser.add_argument(
+        "--restTreatment",
+        type=RestTreatment.from_string,
+        choices=list(RestTreatment),
+        default=ParseOptions.rest_treatment
+    )
+
+    parser.add_argument(
+        "--accidentalTreatment",
+        type=AccidentalTreatment.from_string,
+        choices=list(AccidentalTreatment),
+        default=ParseOptions.accidental_treatment
+    )
+
+    parser.add_argument(
+        "--chordTreatment",
+        type=ChordTreatment.from_string,
+        choices=list(ChordTreatment),
+        default=ParseOptions.chord_treatment
     )
 
     args = parser.parse_args()
@@ -68,9 +92,11 @@ def parse_args() -> (MotiveGeneratorOptions, ParserOptions):
     parsers_options = ParserOptions(
         Path(args.inputFolder),
         Path(args.outputFolder),
-        [
-            ParseOption.USE_DIATONIC if args.useDiatonic else None,
-        ],
+        ParseOptions(
+            args.restTreatment,
+            args.chordTreatment,
+            args.accidentalTreatment,
+        ),
     )
 
     return motive_generator_options, parsers_options

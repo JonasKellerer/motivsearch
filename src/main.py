@@ -2,7 +2,7 @@ import logging
 
 from MotiveGenerator import MotiveGenerator
 from MotiveWriter import write_motives_as_json_to_file
-from src.MainParser import parse_args
+from MainParser import parse_args
 
 
 def main():

@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 
+from ParseOptions import ParseOptions, ChordTreatment, RestTreatment
 from Piece import Piece
 
 
@@ -180,6 +181,66 @@ class PieceTest(unittest.TestCase):
             notesOfFirstVoice,
         )
 
+    def test_should_remove_rests_shorter_than_eights(self):
+        filename = "testData/parsing/basic/remove_rests.musicxml"
+        parse_options =ParseOptions(rest_treatment=RestTreatment.REMOVE_EIGHTS_AND_LOWER)
+        piece = Piece.parse(file=Path(filename), options=parse_options)
+
+        notes_without_short_rests = [
+            "C in octave 4 Quarter Note",
+            "Half Rest",
+            "B in octave 3 Quarter Note",
+            "Half Rest",
+            "Half Rest",
+            "C in octave 4 Quarter Note",
+            "Quarter Rest",
+            "D in octave 4 Quarter Note",
+            "Quarter Rest",
+            "Quarter Rest",
+            "B in octave 3 Quarter Note",
+            "C in octave 4 Eighth Note",
+            "C in octave 4 16th Note",
+            "B in octave 3 16th Note",
+            "C in octave 4 32nd Note",
+            "B in octave 3 32nd Note",
+        ]
+
+        self.assertListEqual(
+            piece.parts[0].voices[0].full_names(),
+            notes_without_short_rests,
+        )
+
+    def test_should_remove_rests_shorter_than_sixteenth(self):
+        filename = "testData/parsing/basic/remove_rests.musicxml"
+        parse_options =ParseOptions(rest_treatment=RestTreatment.REMOVE_SIXTEENTH_AND_LOWER)
+        piece = Piece.parse(file=Path(filename), options=parse_options)
+
+        notes_without_short_rests = [
+            "C in octave 4 Quarter Note",
+            "Half Rest",
+            "B in octave 3 Quarter Note",
+            "Half Rest",
+            "Half Rest",
+            "C in octave 4 Quarter Note",
+            "Quarter Rest",
+            "D in octave 4 Quarter Note",
+            "Quarter Rest",
+            "Quarter Rest",
+            "B in octave 3 Quarter Note",
+            "Eighth Rest",
+            "C in octave 4 Eighth Note",
+            "Eighth Rest",
+            "Eighth Rest",
+            "C in octave 4 16th Note",
+            "B in octave 3 16th Note",
+            "C in octave 4 32nd Note",
+            "B in octave 3 32nd Note",
+        ]
+
+        self.assertListEqual(
+            piece.parts[0].voices[0].full_names(),
+            notes_without_short_rests,
+        )
 
 if __name__ == "__main__":
     unittest.main()
