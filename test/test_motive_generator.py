@@ -1,15 +1,13 @@
 import unittest
 from pathlib import Path
 
-from MainParser import ParseOption
 from MotiveGenerator import MotiveGenerator
+from ParseOptions import ParseOptions
 from SequenceType import SequenceType
 
 
 class MotiveGeneratorTest_DiscoverMotives(unittest.TestCase):
-    options = [
-        ParseOption.USE_DIATONIC,
-    ]
+    options = ParseOptions()
 
     def test_single_file(self):
         file_path = Path("testData/single_file/input")
@@ -420,10 +418,10 @@ class MotiveGeneratorTest_DiscoverMotives(unittest.TestCase):
         self.assertEqual(len(motives), 4)
 
         expected_motives = [
-            {"frequency": 1, "sequence": "['4', '-3', '4']"},
-            {"frequency": 1, "sequence": "['7', '-10', '1']"},
             {"frequency": 1, "sequence": "['1', '2', '4']"},
             {"frequency": 1, "sequence": "['-3', '-2', '1']"},
+            {"frequency": 1, "sequence": "['4', '-3', '4']"},
+            {"frequency": 1, "sequence": "['7', '-10', '1']"},
         ]
 
         for i, expected_motive in enumerate(expected_motives):
@@ -452,7 +450,7 @@ class MotiveGeneratorTest_DiscoverMotives(unittest.TestCase):
 
         expected_motives = [
             {"frequency": 2, "sequence": "['1', '2', '4']"},
-            {"frequency": 2, "sequence": "['3', '2', '1']"},
+            {"frequency": 2, "sequence": "['-3', '-2', '1']"},
         ]
 
         for i, expected_motive in enumerate(expected_motives):
@@ -481,7 +479,7 @@ class MotiveGeneratorTest_DiscoverMotives(unittest.TestCase):
 
         expected_motives = [
             {"frequency": 2, "sequence": "['1', '2', '4']"},
-            {"frequency": 2, "sequence": "['1', '-2', '-3']"},
+            {"frequency": 2, "sequence": "['-3', '-2', '1']"},
         ]
 
         for i, expected_motive in enumerate(expected_motives):

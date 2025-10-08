@@ -9,8 +9,8 @@ from Motive import Motive
 from MotiveList import MotiveList
 from MotivePosition import MotivePosition
 from MotiveUnitGenerator import MotiveUnitGenerator
+from ParseOptions import ParseOptions, AccidentalTreatment
 from PositionSequence import PositionSequence
-from src.MainParser import ParseOption
 
 
 class MotiveGenerator:
@@ -29,12 +29,12 @@ class MotiveGenerator:
         self.max_num_sequences = max_num_sequences
 
     def discover_motives(
-        self, file_path: Path, options: List[ParseOption]
+        self, file_path: Path, options: ParseOptions
     ) -> MotiveList:
         logging.info(f"Discovering motives in {file_path}")
-        corpus = Corpus.parse(file_path)
+        corpus = Corpus.parse(file_path, options)
 
-        if ParseOption.USE_DIATONIC in options:
+        if options.accidental_treatment is AccidentalTreatment.REMOVE_ACCIDENTALS:
             corpus.remove_accidentals()
 
         motive_unit_generator = MotiveUnitGenerator()
