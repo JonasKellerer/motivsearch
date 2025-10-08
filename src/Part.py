@@ -24,7 +24,7 @@ class Part:
         return cls(part.id, voices)
 
 
-def extract_voices(part: Part21, voice_ids: List[str]):
+def extract_voices(part: Part21, voice_ids: List[str]) -> List[Voice]:
     part_data = {voice_id: [] for voice_id in voice_ids}
 
     for i, measure in enumerate(part.getElementsByClass(stream.Measure)):
