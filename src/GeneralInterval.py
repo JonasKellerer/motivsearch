@@ -1,111 +1,70 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from enum import Enum
+from enum import IntEnum
 from typing import List
 
+from pydantic import  BaseModel
 
-class RestIntervalType(str, Enum):
+class RestIntervalType(IntEnum):
     NOTE_BEFORE = 0
     NOTE_AFTER = 1
     REST_BEFORE = 2
     DIVIDER = 3
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
-@dataclass(eq=True, frozen=True)
-class GeneralInterval(ABC):
 
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        pass
-
-    @abstractmethod
-    def inverted(self) -> "GeneralInterval":
-        pass
-
-    @abstractmethod
-    def mirrored(self) -> "GeneralInterval":
-        pass
-
-
-@dataclass(eq=True, frozen=True)
-class BreakInterval(GeneralInterval):
-
-    _type: RestIntervalType
-
-    def __init__(
-        self,
-        type: RestIntervalType,
-    ):
-        object.__setattr__(self, "_type", type)
+class BreakInterval(BaseModel):
+    type: RestIntervalType
 
     @property
     def name(self) -> str:
-        return str(self._type)
+        return str(self.type)
 
-    def __str__(self):
-        return str(self._type)
+    def __str__(self) -> str:
+        return str(self.type)
 
-    def __repr__(self):
-        return str(self._type)
+    def __repr__(self) -> str:
+        return str(self.type)
 
-    def inverted(self):
-        return BreakInterval(type=self._type)
+    def inverted(self) -> "BreakInterval":
+        return BreakInterval(type=self.type)
 
-    def mirrored(self):
-        return BreakInterval(
-            type=self._type,
-        )
+    def mirrored(self) -> "BreakInterval":
+        return BreakInterval(type=self.type)
 
-
-@dataclass(eq=True, frozen=True)
-class Interval(GeneralInterval):
-    _interval: int
-
-    def __init__(
-        self,
-        interval: int,
-    ):
-        object.__setattr__(self, "_interval", interval)
+class Interval(BaseModel):
+    interval: int
 
     @property
     def name(self) -> str:
-        return str(self._interval)
+        return str(self.interval)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.name
 
-    def inverted(self):
-        inverted_interval = 1 if self._interval == 1 else -self._interval
+    def inverted(self) -> "Interval":
+        inverted_interval = 1 if self.interval == 1 else -self.interval
+        return Interval(interval=inverted_interval)
 
-        return Interval(
-            interval=inverted_interval,
-        )
-
-    def mirrored(self):
-        return Interval(
-            interval=self._interval,
-        )
+    def mirrored(self) -> "Interval":
+        return Interval(interval=self.interval)
 
 
-@dataclass
-class IntervalList:
-    intervals: List[GeneralInterval]
+class IntervalList(BaseModel):
+    intervals: List[Interval | BreakInterval]
 
     def inverted(self) -> "IntervalList":
-        return IntervalList([interval.inverted() for interval in self.intervals])
+        return IntervalList(intervals=[interval.inverted() for interval in self.intervals])
 
     def mirrored(self) -> "IntervalList":
-        return IntervalList(self.intervals[::-1]).inverted()
+        return IntervalList(intervals=self.intervals[::-1]).inverted()
 
     def mirrored_inverted(self) -> "IntervalList":
-        return IntervalList(self.intervals[::-1])
+        return IntervalList(intervals=self.intervals[::-1])
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str([interval.name for interval in self.intervals])

@@ -1,27 +1,29 @@
 import logging
-from dataclasses import dataclass
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+
+from pydantic import BaseModel, Field
 
 from GeneralInterval import IntervalList
 from Motive import Motive
 from MotivePosition import MotivePosition
 from SequenceType import SequenceType
 
-
-@dataclass
-class IntervalClasses:
+class IntervalClasses(BaseModel):
     interval_classes: Dict[SequenceType, IntervalList]
 
-    def __init__(self, intervals: IntervalList):
+    @classmethod
+    def from_intervals(cls, intervals: IntervalList) -> "IntervalClasses":
         inverted_intervals = intervals.inverted()
         mirrored_intervals = intervals.mirrored()
         mirrored_inverted_intervals = intervals.mirrored_inverted()
-        self.interval_classes = {
-            SequenceType.ORIGINAL: intervals,
-            SequenceType.INVERTED: inverted_intervals,
-            SequenceType.MIRRORED: mirrored_intervals,
-            SequenceType.MIRRORED_INVERTED: mirrored_inverted_intervals,
-        }
+        return cls(
+            interval_classes={
+                SequenceType.ORIGINAL: intervals,
+                SequenceType.INVERTED: inverted_intervals,
+                SequenceType.MIRRORED: mirrored_intervals,
+                SequenceType.MIRRORED_INVERTED: mirrored_inverted_intervals,
+            }
+        )
 
     def contains(self, intervals: IntervalList) -> bool:
         return any(
@@ -29,7 +31,7 @@ class IntervalClasses:
             for interval_class in self.interval_classes.values()
         )
 
-    def get_sequence_type(self, intervals: IntervalList) -> SequenceType or None:
+    def get_sequence_type(self, intervals: IntervalList) -> Optional[SequenceType]:
         for sequence_type, interval_class in self.interval_classes.items():
             if interval_class == intervals:
                 return sequence_type
@@ -38,22 +40,21 @@ class IntervalClasses:
     def name(self, sequence_type: SequenceType) -> str:
         return str(self.interval_classes[sequence_type])
 
+def _default_positions() -> Dict[SequenceType, Dict[str, Dict[str, Dict[str, List[MotivePosition]]]]]:
+    return {
+        SequenceType.ORIGINAL: {},
+        SequenceType.INVERTED: {},
+        SequenceType.MIRRORED: {},
+        SequenceType.MIRRORED_INVERTED: {},
+    }
 
-@dataclass
-class ResultMotive:
+class ResultMotive(BaseModel):
     intervals: IntervalClasses
-    positions: Dict[SequenceType, Dict[str, Dict[str, Dict[str, List[MotivePosition]]]]]
+    positions: Dict[SequenceType, Dict[str, Dict[str, Dict[str, List[MotivePosition]]]]] = Field(
+        default_factory=_default_positions
+    )
 
-    def __init__(self, intervals: IntervalClasses):
-        self.intervals = intervals
-        self.positions = {
-            SequenceType.ORIGINAL: {},
-            SequenceType.INVERTED: {},
-            SequenceType.MIRRORED: {},
-            SequenceType.MIRRORED_INVERTED: {},
-        }
-
-    def get_sequence_type(self, motive: Motive) -> SequenceType or None:
+    def get_sequence_type(self, motive: Motive) -> Optional[SequenceType]:
         interval_list = IntervalList(intervals=motive.sequence)
         return self.intervals.get_sequence_type(interval_list)
 
@@ -69,10 +70,9 @@ class ResultMotive:
             part_id, {}
         ).setdefault(voice_id, []).extend(motive.positions)
 
-    def frequency(self, sequence_type: SequenceType or None = None) -> int:
+    def frequency(self, sequence_type: Optional[SequenceType] = None) -> int:
         if sequence_type is None:
             return count_elements_in_lists(self.positions)
-
         return count_elements_in_lists(self.positions[sequence_type])
 
 
@@ -84,8 +84,7 @@ def count_elements_in_lists(d: Any) -> int:
     return 0
 
 
-@dataclass
-class MotiveList:
+class MotiveList(BaseModel):
     motives: List[ResultMotive]
 
     def add(
@@ -99,7 +98,7 @@ class MotiveList:
         for candidate_motive in candidate_motives:
             if len(self.motives) == 0:
                 result_motive = ResultMotive(
-                    intervals=IntervalClasses(
+                    intervals=IntervalClasses.from_intervals(
                         IntervalList(intervals=candidate_motive.sequence)
                     )
                 )
@@ -131,7 +130,7 @@ class MotiveList:
 
             if not found_existing_motive:
                 result_motive = ResultMotive(
-                    intervals=IntervalClasses(
+                    intervals=IntervalClasses.from_intervals(
                         IntervalList(intervals=candidate_motive.sequence)
                     )
                 )

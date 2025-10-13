@@ -48,7 +48,7 @@ class MotiveUnitGenerator:
                     m21_interval = m21Interval(
                         note_or_rest, voice.notes[i + 1]
                     ).generic.directed
-                    sequence = [Interval(m21_interval)]
+                    sequence = [Interval(interval=m21_interval)]
 
                     single_motives.append(
                         Motive(

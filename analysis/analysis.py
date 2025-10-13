@@ -1,5 +1,4 @@
 import argparse
-import json
 import logging
 from cmath import sqrt
 from dataclasses import dataclass
@@ -34,9 +33,8 @@ def is_overlapping_with_previous_position(position: int, other: int, length: int
 
 def read_motives_from_json(input_file: Path) -> MotiveList:
     with open(input_file, "r") as file:
-        data = json.load(file)
-        motives = [ResultMotive(**motive) for motive in data["motives"]]
-        return MotiveList(motives=motives)
+        json_str = file.read()
+        return MotiveList.model_validate_json(json_str)
 
 
 @dataclass
@@ -62,7 +60,7 @@ def main():
 
     motive_list = read_motives_from_json(input_file)
 
-    piece_titles = extract_piece_titles(data)
+    piece_titles = extract_piece_titles(motive_list)
     motive_classes: Dict[str, MotiveClass] = {}
 
     for motive in motive_list.motives:
@@ -217,10 +215,10 @@ def main():
             motive_class.interval_mirrored,
             motive_class.interval_mirrored_inverted,
             motive_class.frequency,
-            motive_class.frequency_per_sequence_type["original"],
-            motive_class.frequency_per_sequence_type["inverted"],
-            motive_class.frequency_per_sequence_type["mirrored"],
-            motive_class.frequency_per_sequence_type["mirrored_inverted"],
+            motive_class.frequency_per_sequence_type["ORIGINAL"],
+            motive_class.frequency_per_sequence_type["INVERTED"],
+            motive_class.frequency_per_sequence_type["MIRRORED"],
+            motive_class.frequency_per_sequence_type["MIRRORED_INVERTED"],
             motive_class.in_n_pieces,
             motive_class.mean_relative_frequency,
             motive_class.standard_derivation_relative_frequency,
@@ -256,7 +254,7 @@ def get_motive_classes_per_piece(
             [
                 1
                 for motive in motive_classes
-                if motive_classes[motive]["frequency_per_piece"].get(piece, 0) > 0
+                if motive_classes[motive].frequency_per_piece.get(piece, 0) > 0
             ]
         )
     mean_number_of_motive_classes_per_piece = (
@@ -291,7 +289,7 @@ def get_motives_per_piece(motive_classes, piece_titles):
     for piece in piece_titles:
         motives_in_piece[piece] = sum(
             [
-                motive_class["frequency_per_piece"].get(piece, 0)
+                motive_class.frequency_per_piece.get(piece, 0)
                 for motive_class in motive_classes.values()
             ]
         )
@@ -395,7 +393,7 @@ def filter_overlapping_positions(result_motive: ResultMotive):
 
                 # sort by position
                 all_positions_per_voice = sorted(
-                    all_positions_per_voice, key=lambda x: x["position"]["position"]
+                    all_positions_per_voice, key=lambda x: x["position"].position
                 )
 
                 # remove overlapping positions
@@ -405,9 +403,9 @@ def filter_overlapping_positions(result_motive: ResultMotive):
                         filtered_positions.append(position)
                     else:
                         if not is_overlapping_with_previous_position(
-                            position["position"]["position"],
-                            filtered_positions[-1]["position"]["position"],
-                            filtered_positions[-1]["position"]["length"],
+                            position["position"].position,
+                            filtered_positions[-1]["position"].position,
+                            filtered_positions[-1]["position"].length,
                         ):
                             filtered_positions.append(position)
 
@@ -437,11 +435,11 @@ def filter_overlapping_positions(result_motive: ResultMotive):
                                 ] = filtered_positions_per_sequence_type[sequence_type]
 
 
-def extract_piece_titles(data):
+def extract_piece_titles(motive_list: MotiveList):
     all_pieces = set()
-    for i, entry in data.iterrows():
-        for sequence_type in entry["positions"]:
-            for piece in entry["positions"][sequence_type]:
+    for motive in motive_list.motives:
+        for pieces in motive.positions.values():
+            for piece in pieces.keys():
                 all_pieces.add(piece)
     return all_pieces
 

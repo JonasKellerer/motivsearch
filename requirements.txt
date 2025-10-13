@@ -2,3 +2,5 @@ music21==9.3.0
 black
 parameterized
 pandas
+pydantic
+matplotlib
