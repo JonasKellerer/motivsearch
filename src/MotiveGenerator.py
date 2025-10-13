@@ -40,7 +40,7 @@ class MotiveGenerator:
         motive_unit_generator = MotiveUnitGenerator()
         all_motive_units = motive_unit_generator.from_corpus(corpus)
 
-        all_motives = MotiveList([])
+        all_motives = MotiveList(motives=[])
         for piece in all_motive_units:
             logging.info(f"Processing piece {piece}")
             for part in all_motive_units[piece]:

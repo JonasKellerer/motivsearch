@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 from typing import List
 
-from GeneralInterval import GeneralInterval
+from GeneralInterval import BreakInterval, Interval
 from MotivePosition import MotivePosition
 
 
 @dataclass
 class Motive:
     positions: List[MotivePosition]
-    sequence: List[GeneralInterval]
+    sequence: List[BreakInterval | Interval]
 
     def __str__(self):
         return f"{self.sequence},{self.frequency},{self.positions}"
