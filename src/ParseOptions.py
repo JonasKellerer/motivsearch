@@ -42,4 +42,4 @@ class ChordTreatment(Enum):
 class ParseOptions:
     rest_treatment: RestTreatment = RestTreatment.NONE
     chord_treatment: ChordTreatment = ChordTreatment.HIGHEST
-    accidental_treatment: AccidentalTreatment = AccidentalTreatment.NONE
+    accidental_treatment: AccidentalTreatment = AccidentalTreatment.REMOVE_ACCIDENTALS

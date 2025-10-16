@@ -1,4 +1,5 @@
 import argparse
+import logging
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -57,10 +58,6 @@ def parse_args() -> (MotiveGeneratorOptions, ParserOptions):
     parser.add_argument("--maxLength", type=int, help="Maximum length of a motive")
 
     parser.add_argument(
-        "--useDiatonic", action="store_true", help="Use diatonic intervals"
-    )
-
-    parser.add_argument(
         "--restTreatment",
         type=RestTreatment.from_string,
         choices=list(RestTreatment),
@@ -98,5 +95,9 @@ def parse_args() -> (MotiveGeneratorOptions, ParserOptions):
             args.accidentalTreatment,
         ),
     )
+
+    logging.info(f"Motive generator options: {motive_generator_options}")
+    logging.info(f"Parser options: {parsers_options}")
+
 
     return motive_generator_options, parsers_options
