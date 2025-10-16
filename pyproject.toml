@@ -1,0 +1,11 @@
+[project]
+name = "motivsearch"
+version = "0.1.0"
+description = "A tool to search for motives in a folder of music scores in xml format."
+requires-python = ">=3.10,<3.11"
+dependencies = [
+    "matplotlib>=3.10.7",
+    "music21==8.3.0",
+    "pandas>=2.3.3",
+    "pydantic>=2.12.0",
+]

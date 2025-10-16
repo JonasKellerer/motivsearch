@@ -43,12 +43,15 @@ note.
 
 This project is developed for linux distributions.
 It might work also for other distributions, since it runs python scripts.
-
 For this project you need to have a running version of python3 and musecore3.
+
+We use [uv](https://docs.astral.sh/uv/) to install packages.
 To install the necessary python packages you can run the following command:
 
 ```bash
-pip install -r requirements.txt
+uv venv
+source .venv/bin/activate
+uv pip install -e . 
 ```
 
 # Usage
