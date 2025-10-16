@@ -19,12 +19,14 @@ def parse_args() -> (Path, Path):
     parser = argparse.ArgumentParser(description="Plot Motive Generator output")
     parser.add_argument("--inputFile", type=str, help="File containing the output")
     parser.add_argument("--outputFolder", type=str, help="Folder for output files")
+    parser.add_argument("--filterOverlappingPositions", action=argparse.BooleanOptionalAction, help="Filter overlapping positions of motives", default=True)
 
     args = parser.parse_args()
     input_file = Path(args.inputFile)
     output_folder = Path(args.outputFolder)
+    filter_overlapping_positions_option = args.filterOverlappingPositions
 
-    return input_file, output_folder
+    return input_file, output_folder, filter_overlapping_positions_option
 
 
 def is_overlapping_with_previous_position(position: int, other: int, length: int):
@@ -54,9 +56,7 @@ class MotiveClass:
 
 
 def main():
-    input_file, output_folder = parse_args()
-
-    data = pd.read_json(input_file)
+    input_file, output_folder, filter_overlapping_positions_option = parse_args()
 
     motive_list = read_motives_from_json(input_file)
 
@@ -71,7 +71,8 @@ def main():
             SequenceType.MIRRORED_INVERTED
         ]
 
-        filter_overlapping_positions(motive)
+        if filter_overlapping_positions_option:
+            filter_overlapping_positions(motive)
 
         frequency_per_sequence_type = get_frequency_per_sequence_type(motive)
 
@@ -361,16 +362,32 @@ def get_frequency_per_piece(piece_titles: Set[str], result_motive: ResultMotive)
     return frequency_per_piece
 
 
-def filter_overlapping_positions(result_motive: ResultMotive):
+def filter_overlapping_positions(result_motive: ResultMotive, filter_overlapping_positions_option: bool = True):
+    # helper_positions_by_piece = {}
+    # logging.info(f"Calculating helper positions")
+    # for sequence_type, positions_by_sequence_type in result_motive.positions.items():
+    #     for piece, positions_by_piece in positions_by_sequence_type.items():
+    #         helper_positions_by_piece[piece] = {}
+    #         for part, positions_by_part in positions_by_piece.items():
+    #             helper_positions_by_piece[piece][part] = {}
+    #             for voice, positions_by_voice in positions_by_part.items():
+    #                 helper_positions_by_piece[piece][part][voice] = {}
+    #                 helper_positions_by_piece[piece][part][voice][
+    #                     sequence_type
+    #                 ] = positions_by_voice
+
     helper_positions_by_piece = {}
     logging.info(f"Calculating helper positions")
     for sequence_type, positions_by_sequence_type in result_motive.positions.items():
         for piece, positions_by_piece in positions_by_sequence_type.items():
-            helper_positions_by_piece[piece] = {}
+            if piece not in helper_positions_by_piece:
+                helper_positions_by_piece[piece] = {}
             for part, positions_by_part in positions_by_piece.items():
-                helper_positions_by_piece[piece][part] = {}
+                if part not in helper_positions_by_piece[piece]:
+                    helper_positions_by_piece[piece][part] = {}
                 for voice, positions_by_voice in positions_by_part.items():
-                    helper_positions_by_piece[piece][part][voice] = {}
+                    if voice not in helper_positions_by_piece[piece][part]:
+                        helper_positions_by_piece[piece][part][voice] = {}
                     helper_positions_by_piece[piece][part][voice][
                         sequence_type
                     ] = positions_by_voice

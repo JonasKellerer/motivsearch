@@ -6,7 +6,7 @@ from music21 import stream, chord
 from music21.harmony import Harmony
 from music21.note import Rest, GeneralNote
 
-from ParseOptions import ParseOptions
+from ParseOptions import ParseOptions, ChordTreatment
 from Voice import Voice
 from music21.stream import Part as Part21
 
@@ -65,7 +65,31 @@ def extrac_voice_ids(part: Part21) -> List[str]:
     return voice_ids
 
 
+def chord_treatment(note: GeneralNote, options: Optional[ParseOptions] = None) -> GeneralNote:
+    if options is None:
+        return use_only_highest_note(note)
+
+    if options.chord_treatment is ChordTreatment.HIGHEST:
+        return use_only_highest_note(note)
+    elif options.chord_treatment is ChordTreatment.LOWEST:
+        return use_only_lowest_note(note)
+    elif options.chord_treatment is ChordTreatment.REMOVE:
+        return replace_with_same_length_rest(note)
+
+    return use_only_highest_note(note)
+
 def use_only_highest_note(note: GeneralNote) -> GeneralNote:
     if isinstance(note, chord.Chord):
         return note.sortAscending()[-1]
     return note
+
+def use_only_lowest_note(note: GeneralNote) -> GeneralNote:
+    if isinstance(note, chord.Chord):
+        return note.sortAscending()[0]
+    return note
+
+def replace_with_same_length_rest(note: GeneralNote) ->GeneralNote:
+    if isinstance(note, chord.Chord):
+        return Rest(quarterLength=note.quarterLength)
+    return note
+
