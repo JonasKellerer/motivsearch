@@ -23,7 +23,7 @@ class Part:
         logging.info(f"Extracting part {part.id}")
         part.stripTies(inPlace=True)
 
-        voices = extract_voices(part, extrac_voice_ids(part))
+        voices = extract_voices(part, extrac_voice_ids(part), options=options)
 
         logging.debug(f"Removing rests from {part.id} which are shorter than {options.rest_treatment}")
         for voice in voices:
@@ -32,7 +32,7 @@ class Part:
         return cls(part.id, voices)
 
 
-def extract_voices(part: Part21, voice_ids: List[str]) -> List[Voice]:
+def extract_voices(part: Part21, voice_ids: List[str], options: Optional[ParseOptions] = None) -> List[Voice]:
     part_data = {voice_id: [] for voice_id in voice_ids}
 
     for i, measure in enumerate(part.getElementsByClass(stream.Measure)):
@@ -40,7 +40,7 @@ def extract_voices(part: Part21, voice_ids: List[str]) -> List[Voice]:
             for note in measure.notesAndRests:
                 if isinstance(note, Harmony):
                     continue
-                part_data[voice_ids[0]].append(use_only_highest_note(note))
+                part_data[voice_ids[0]].append(chord_treatment(note, options))
             for voice in voice_ids[1:]:
                 part_data[voice].append(
                     Rest(quarterLength=measure.barDuration.quarterLength)
@@ -48,7 +48,7 @@ def extract_voices(part: Part21, voice_ids: List[str]) -> List[Voice]:
 
         for voice in measure.voices:
             for note in voice.notesAndRests:
-                part_data[voice.id].append(use_only_highest_note(note))
+                part_data[voice.id].append(chord_treatment(note, options))
 
     return [Voice(voice_id, part_data[voice_id]) for voice_id in voice_ids]
 
