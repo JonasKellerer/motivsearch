@@ -3,7 +3,7 @@ import logging
 from cmath import sqrt
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Set, Dict
+from typing import Set, Dict, Tuple
 
 import matplotlib
 
@@ -54,6 +54,35 @@ class MotiveClass:
     standard_derivation_relative_frequency: float
     weighted_arithmetic_mean: float
 
+def rearrange_so_original_has_max_value(original_dict: Dict[str, int], original: str, inverted: str, mirrored: str, mirrored_inverted: str) -> Tuple[Dict[str, int], str, str, str, str]:
+    key_with_max_value = max(original_dict, key=original_dict.get)
+
+    if key_with_max_value == "INVERTED":
+        new_dict = {
+            "ORIGINAL": original_dict["INVERTED"],
+            "INVERTED": original_dict["ORIGINAL"],
+            "MIRRORED": original_dict["MIRRORED_INVERTED"],
+            "MIRRORED_INVERTED": original_dict["MIRRORED"],
+        }
+        return new_dict, inverted, original, mirrored_inverted, mirrored
+    elif key_with_max_value == "MIRRORED":
+        new_dict = {
+            "ORIGINAL": original_dict["MIRRORED"],
+            "INVERTED": original_dict["MIRRORED_INVERTED"],
+            "MIRRORED": original_dict["ORIGINAL"],
+            "MIRRORED_INVERTED": original_dict["INVERTED"],
+        }
+        return new_dict, mirrored, mirrored_inverted, original, inverted
+    elif key_with_max_value == "MIRRORED_INVERTED":
+        new_dict = {
+            "ORIGINAL": original_dict["MIRRORED_INVERTED"],
+            "INVERTED": original_dict["MIRRORED"],
+            "MIRRORED": original_dict["INVERTED"],
+            "MIRRORED_INVERTED": original_dict["ORIGINAL"],
+        }
+        return new_dict, mirrored_inverted, mirrored, inverted, original
+    else:
+        return original_dict, original, inverted, mirrored, mirrored_inverted
 
 def main():
     input_file, output_folder, filter_overlapping_positions_option = parse_args()
@@ -64,17 +93,17 @@ def main():
     motive_classes: Dict[str, MotiveClass] = {}
 
     for motive in motive_list.motives:
-        intervals_original = motive.intervals.interval_classes[SequenceType.ORIGINAL]
-        intervals_inverted = motive.intervals.interval_classes[SequenceType.INVERTED]
-        intervals_mirrored = motive.intervals.interval_classes[SequenceType.MIRRORED]
-        intervals_mirrored_inverted = motive.intervals.interval_classes[
-            SequenceType.MIRRORED_INVERTED
-        ]
+        intervals_original = str(motive.intervals.interval_classes[SequenceType.ORIGINAL])
+        intervals_inverted = str(motive.intervals.interval_classes[SequenceType.INVERTED])
+        intervals_mirrored = str(motive.intervals.interval_classes[SequenceType.MIRRORED])
+        intervals_mirrored_inverted = str(motive.intervals.interval_classes[SequenceType.MIRRORED_INVERTED])
 
         if filter_overlapping_positions_option:
             filter_overlapping_positions(motive)
 
         frequency_per_sequence_type = get_frequency_per_sequence_type(motive)
+
+        frequency_per_sequence_type, intervals_original, intervals_inverted, intervals_mirrored, intervals_mirrored_inverted = rearrange_so_original_has_max_value(frequency_per_sequence_type, intervals_original, intervals_inverted, intervals_mirrored, intervals_mirrored_inverted)
 
         frequency_per_piece = get_frequency_per_piece(piece_titles, motive)
 
@@ -82,10 +111,10 @@ def main():
 
         motive_classes[str(intervals_original)] = MotiveClass(
             frequency=motive.frequency(),
-            intervals_original=str(intervals_original),
-            interval_inverted=str(intervals_inverted),
-            interval_mirrored=str(intervals_mirrored),
-            interval_mirrored_inverted=str(intervals_mirrored_inverted),
+            intervals_original=intervals_original,
+            interval_inverted=intervals_inverted,
+            interval_mirrored=intervals_mirrored,
+            interval_mirrored_inverted=intervals_mirrored_inverted,
             frequency_per_sequence_type=frequency_per_sequence_type,
             frequency_per_piece=frequency_per_piece,
             in_n_pieces=in_n_pieces,
@@ -363,19 +392,6 @@ def get_frequency_per_piece(piece_titles: Set[str], result_motive: ResultMotive)
 
 
 def filter_overlapping_positions(result_motive: ResultMotive, filter_overlapping_positions_option: bool = True):
-    # helper_positions_by_piece = {}
-    # logging.info(f"Calculating helper positions")
-    # for sequence_type, positions_by_sequence_type in result_motive.positions.items():
-    #     for piece, positions_by_piece in positions_by_sequence_type.items():
-    #         helper_positions_by_piece[piece] = {}
-    #         for part, positions_by_part in positions_by_piece.items():
-    #             helper_positions_by_piece[piece][part] = {}
-    #             for voice, positions_by_voice in positions_by_part.items():
-    #                 helper_positions_by_piece[piece][part][voice] = {}
-    #                 helper_positions_by_piece[piece][part][voice][
-    #                     sequence_type
-    #                 ] = positions_by_voice
-
     helper_positions_by_piece = {}
     logging.info(f"Calculating helper positions")
     for sequence_type, positions_by_sequence_type in result_motive.positions.items():
