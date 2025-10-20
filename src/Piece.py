@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from operator import index
 from pathlib import Path
 from typing import List, Optional
 
@@ -20,7 +21,7 @@ class Piece:
         score = converter.parse(file)
 
         logging.info(f"Extracting parts from {file}")
-        parts = [Part.parse(part, options) for part in score.parts]
+        parts = [Part.parse(part, unique_id=str(index), options=options) for index, part in enumerate(score.parts)]
         title = file.stem
 
         return cls(title, parts)

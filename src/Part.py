@@ -16,20 +16,21 @@ class Part:
     voices: List[Voice]
 
     @classmethod
-    def parse(cls, part: Part21, options: Optional[ParseOptions] = None) -> "Part":
+    def parse(cls, part: Part21, unique_id: str, options: Optional[ParseOptions] = None) -> "Part":
         if options is None:
             options = ParseOptions()
 
-        logging.info(f"Extracting part {part.id}")
+        id = str(part.id) + "_" + str(unique_id)
+        logging.info(f"Extracting part with {id} from music21 part id {part.id}")
         part.stripTies(inPlace=True)
 
         voices = extract_voices(part, extrac_voice_ids(part), options=options)
 
-        logging.debug(f"Removing rests from {part.id} which are shorter than {options.rest_treatment}")
+        logging.debug(f"Removing rests from {id} which are shorter than {options.rest_treatment}")
         for voice in voices:
             voice.remove_rests(options.rest_treatment)
 
-        return cls(part.id, voices)
+        return cls(id=id, voices=voices)
 
 
 def extract_voices(part: Part21, voice_ids: List[str], options: Optional[ParseOptions] = None) -> List[Voice]:
