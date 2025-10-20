@@ -242,5 +242,39 @@ class PieceTest(unittest.TestCase):
             notes_without_short_rests,
         )
 
+    def test_should_use_lowest_note_in_chord(self):
+        filename = "testData/parsing/basic/chord_treatment.musicxml"
+        parse_options =ParseOptions(chord_treatment=ChordTreatment.LOWEST)
+        piece = Piece.parse(file=Path(filename), options=parse_options)
+
+        notes_without_short_rests = [
+            "C in octave 4 Quarter Note",
+            "F in octave 4 Quarter Note",
+            "E in octave 4 Quarter Note",
+            "B in octave 3 Quarter Note",
+        ]
+
+        self.assertListEqual(
+            piece.parts[0].voices[0].full_names(),
+            notes_without_short_rests,
+        )
+
+    def test_should_remove_chords(self):
+        filename = "testData/parsing/basic/chord_treatment.musicxml"
+        parse_options =ParseOptions(chord_treatment=ChordTreatment.REMOVE)
+        piece = Piece.parse(file=Path(filename), options=parse_options)
+
+        notes_without_short_rests = [
+            "Quarter Rest",
+            "F in octave 4 Quarter Note",
+            "E in octave 4 Quarter Note",
+            "Quarter Rest",
+        ]
+
+        self.assertListEqual(
+            piece.parts[0].voices[0].full_names(),
+            notes_without_short_rests,
+        )
+
 if __name__ == "__main__":
     unittest.main()
