@@ -250,6 +250,37 @@ class MotiveGeneratorTest_DiscoverMotives(unittest.TestCase):
                 expected_motive["sequence"],
             )
 
+    def test_multiple_parts_with_same_name(self):
+        file_path = Path("testData/multiple_parts_with_same_name/input")
+
+        motive_generator = MotiveGenerator(
+            min_frequency=1,
+            max_gap=0,
+            max_length=3,
+            min_num_sequences=3,
+            max_num_sequences=3,
+        )
+
+        motives = motive_generator.discover_motives(
+            file_path=file_path, options=self.options
+        )
+
+        self.assertEqual(len(motives), 4)
+
+        expected_motives = [
+            {"frequency": 2, "sequence": "['1', '-2', '-3']"},
+            {"frequency": 1, "sequence": "['2', '1', '-2']"},
+            {"frequency": 1, "sequence": "['2', '3', '-4']"},
+            {"frequency": 1, "sequence": "['3', '-4', '1']"},
+        ]
+
+        for i, expected_motive in enumerate(expected_motives):
+            self.assertEqual(motives[i].frequency(), expected_motive["frequency"])
+            self.assertEqual(
+                motives[i].intervals.name(SequenceType.ORIGINAL),
+                expected_motive["sequence"],
+            )
+
     def test_multiple_voices_in_one_part(self):
         file_path = Path("testData/multiple_voices_in_one_part")
 
