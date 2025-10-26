@@ -1,7 +1,8 @@
 from enum import IntEnum
 from typing import List
 
-from pydantic import  BaseModel
+from pydantic import BaseModel
+
 
 class RestIntervalType(IntEnum):
     NOTE_BEFORE = 0
@@ -11,7 +12,6 @@ class RestIntervalType(IntEnum):
 
     def __str__(self) -> str:
         return self.name
-
 
 
 class BreakInterval(BaseModel):
@@ -32,6 +32,7 @@ class BreakInterval(BaseModel):
 
     def mirrored(self) -> "BreakInterval":
         return BreakInterval(type=self.type)
+
 
 class Interval(BaseModel):
     interval: int
@@ -58,7 +59,9 @@ class IntervalList(BaseModel):
     intervals: List[Interval | BreakInterval]
 
     def inverted(self) -> "IntervalList":
-        return IntervalList(intervals=[interval.inverted() for interval in self.intervals])
+        return IntervalList(
+            intervals=[interval.inverted() for interval in self.intervals]
+        )
 
     def mirrored(self) -> "IntervalList":
         return IntervalList(intervals=self.intervals[::-1]).inverted()

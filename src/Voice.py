@@ -20,7 +20,8 @@ class Voice:
         if quarter_length_limit is None:
             return
         self.notes = [
-            element for element in self.notes
-            if not isinstance(element, Rest) or element.duration.quarterLength > quarter_length_limit
+            element
+            for element in self.notes
+            if not isinstance(element, Rest)
+            or element.duration.quarterLength > quarter_length_limit
         ]
-

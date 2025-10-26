@@ -14,7 +14,9 @@ class Corpus:
     pieces: List[Piece]
 
     @classmethod
-    def parse(cls, input_folder: Path, options: Optional[ParseOptions] = None) -> "Corpus":
+    def parse(
+        cls, input_folder: Path, options: Optional[ParseOptions] = None
+    ) -> "Corpus":
         logging.info(f"Reading folder {input_folder}")
         is_xml = (
             lambda file_path: file_path.suffix == ".xml"

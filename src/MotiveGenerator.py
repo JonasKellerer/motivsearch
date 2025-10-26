@@ -28,9 +28,7 @@ class MotiveGenerator:
         self.min_num_sequences = min_num_sequences
         self.max_num_sequences = max_num_sequences
 
-    def discover_motives(
-        self, file_path: Path, options: ParseOptions
-    ) -> MotiveList:
+    def discover_motives(self, file_path: Path, options: ParseOptions) -> MotiveList:
         logging.info(f"Discovering motives in {file_path}")
         corpus = Corpus.parse(file_path, options)
 
