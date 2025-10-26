@@ -183,7 +183,9 @@ class PieceTest(unittest.TestCase):
 
     def test_should_remove_rests_shorter_than_eights(self):
         filename = "testData/parsing/basic/remove_rests.musicxml"
-        parse_options =ParseOptions(rest_treatment=RestTreatment.REMOVE_EIGHTS_AND_LOWER)
+        parse_options = ParseOptions(
+            rest_treatment=RestTreatment.REMOVE_EIGHTS_AND_LOWER
+        )
         piece = Piece.parse(file=Path(filename), options=parse_options)
 
         notes_without_short_rests = [
@@ -212,7 +214,9 @@ class PieceTest(unittest.TestCase):
 
     def test_should_remove_rests_shorter_than_sixteenth(self):
         filename = "testData/parsing/basic/remove_rests.musicxml"
-        parse_options =ParseOptions(rest_treatment=RestTreatment.REMOVE_SIXTEENTH_AND_LOWER)
+        parse_options = ParseOptions(
+            rest_treatment=RestTreatment.REMOVE_SIXTEENTH_AND_LOWER
+        )
         piece = Piece.parse(file=Path(filename), options=parse_options)
 
         notes_without_short_rests = [
@@ -244,7 +248,7 @@ class PieceTest(unittest.TestCase):
 
     def test_should_use_lowest_note_in_chord(self):
         filename = "testData/parsing/basic/chord_treatment.musicxml"
-        parse_options =ParseOptions(chord_treatment=ChordTreatment.LOWEST)
+        parse_options = ParseOptions(chord_treatment=ChordTreatment.LOWEST)
         piece = Piece.parse(file=Path(filename), options=parse_options)
 
         notes_without_short_rests = [
@@ -261,7 +265,7 @@ class PieceTest(unittest.TestCase):
 
     def test_should_remove_chords(self):
         filename = "testData/parsing/basic/chord_treatment.musicxml"
-        parse_options =ParseOptions(chord_treatment=ChordTreatment.REMOVE)
+        parse_options = ParseOptions(chord_treatment=ChordTreatment.REMOVE)
         piece = Piece.parse(file=Path(filename), options=parse_options)
 
         notes_without_short_rests = [
@@ -275,6 +279,7 @@ class PieceTest(unittest.TestCase):
             piece.parts[0].voices[0].full_names(),
             notes_without_short_rests,
         )
+
 
 if __name__ == "__main__":
     unittest.main()
