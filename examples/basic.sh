@@ -1,0 +1,17 @@
+#!/bin/bash
+
+mkdir output_basic
+
+PYTHONPATH=../src uv run ../src/main.py \
+  --inputFolder data \
+  --outputFolder output_basic \
+  --minFrequency 1 \
+  --maxGap 0 \
+  --minNumSequences 3 \
+  --maxNumSequences 3 \
+  --maxLength 3 \
+  --accidentalTreatment REMOVE_ACCIDENTALS
+
+PYTHONPATH=../src uv run ../analysis/analysis.py \
+  --inputFile output_basic/output.json \
+  --outputFolder output_basic --filterOverlappingPositions
