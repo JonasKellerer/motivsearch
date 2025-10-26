@@ -224,7 +224,6 @@ def main():
     correlation = correlation_nominator / correlation_denominator
     logging.info(f"Correlation: {correlation}")
 
-    # Gewichtete Arithmetische Mittel
     total_number_of_motives = sum([motives_per_piece[piece] for piece in piece_titles])
 
     weighted_arithmetic_mean_per_motive = {}
@@ -242,13 +241,11 @@ def main():
         motive_class.weighted_arithmetic_mean = weighted_arithmetic_mean_per_motive[key]
 
     logging.info("Sorting motives")
-    # sort by frequency
     sorted_motive_classes = dict(
         sorted(motive_classes.items(), key=lambda item: item[1].frequency, reverse=True)
     )
 
     logging.info("Creating DataFrame")
-    # Create DataFrame
     columns = [
         "intervals_original",
         "interval_inverted",
@@ -291,7 +288,6 @@ def main():
             motive_class.standard_derivation_relative_frequency,
             motive_class.weighted_arithmetic_mean,
         ]
-        # Add frequencies for each piece
         for piece in sorted(piece_titles):
             row.append(motive_class.frequency_per_piece.get(piece, 0))
 
@@ -302,7 +298,6 @@ def main():
 
     df = pd.DataFrame(rows, columns=columns)
 
-    # Ensure the output folder exists
     logging.info(f"Writing output to {output_folder}")
     output_folder.mkdir(parents=True, exist_ok=True)
     output_file = output_folder / "motives.csv"
