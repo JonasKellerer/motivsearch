@@ -17,8 +17,8 @@ import pandas as pd
 
 def parse_args() -> (Path, Path):
     parser = argparse.ArgumentParser(description="Plot Motive Generator output")
-    parser.add_argument("--inputFile", type=str, help="File containing the output")
-    parser.add_argument("--outputFolder", type=str, help="Folder for output files")
+    parser.add_argument("--inputFile", type=str, help="File containing the output", required=True)
+    parser.add_argument("--outputFolder", type=str, help="Folder for output files", required=True)
     parser.add_argument("--filterOverlappingPositions", action=argparse.BooleanOptionalAction, help="Filter overlapping positions of motives", default=True)
 
     args = parser.parse_args()

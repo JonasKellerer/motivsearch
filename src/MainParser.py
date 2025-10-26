@@ -38,44 +38,51 @@ class ParserOptions:
 def parse_args() -> (MotiveGeneratorOptions, ParserOptions):
     parser = argparse.ArgumentParser(description="Motive Generator")
     parser.add_argument(
-        "--inputFolder", type=str, help="Folder containing the xml files"
+        "--inputFolder", type=str, help="Folder containing the xml and musicxml files", required=True
     )
-    parser.add_argument("--outputFolder", type=str, help="Folder for output files")
+    parser.add_argument("--outputFolder", type=str, help="Folder for output files", required=True)
     parser.add_argument(
         "--minFrequency",
         type=int,
         help="Minimal frequency, of how often a motive must occur",
+        required=True
     )
     parser.add_argument(
-        "--maxGap", type=int, help="Maximum gap allowed between two notes"
+        "--maxGap", type=int, help="Maximum gap allowed between two notes", required=True
     )
     parser.add_argument(
-        "--minNumSequences", type=int, help="Minimum number of sequences"
+        "--minNumSequences", type=int, help="Minimum number of sequences in a motive", required=True
     )
     parser.add_argument(
-        "--maxNumSequences", type=int, help="Maximum number of sequences"
+        "--maxNumSequences", type=int, help="Maximum number of sequences in a motive", required=True
     )
-    parser.add_argument("--maxLength", type=int, help="Maximum length of a motive")
+    parser.add_argument("--maxLength", type=int, help="Maximum length of a motive, including gaps.", required=True)
 
     parser.add_argument(
         "--restTreatment",
+        help="Optional flag to remove rests to a certain length from the corpus before analysing. Default NONE.",
         type=RestTreatment.from_string,
         choices=list(RestTreatment),
-        default=ParseOptions.rest_treatment
+        default=ParseOptions.rest_treatment,
+        metavar="{NONE,REMOVE_EIGHTS_AND_LOWER,REMOVE_SIXTEENTH_AND_LOWER}"
     )
 
     parser.add_argument(
         "--accidentalTreatment",
+        help="Optional flag to remove all accidentals from notes in the corpus before analysing. Default REMOVE_ACCIDENTALS",
         type=AccidentalTreatment.from_string,
         choices=list(AccidentalTreatment),
-        default=ParseOptions.accidental_treatment
+        default=ParseOptions.accidental_treatment,
+        metavar="{NONE,REMOVE_ACCIDENTALS}"
     )
 
     parser.add_argument(
         "--chordTreatment",
+        help="Optional flag to select how chords should be treated in the corpus before analysing. Default HIGHEST",
         type=ChordTreatment.from_string,
         choices=list(ChordTreatment),
-        default=ParseOptions.chord_treatment
+        default=ParseOptions.chord_treatment,
+        metavar="{HIGHEST,LOWEST,REMOVE}"
     )
 
     args = parser.parse_args()

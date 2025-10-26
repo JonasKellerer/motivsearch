@@ -1,16 +1,19 @@
 # Motive search
 
-This project is a tool to search for motives in a folder of music scores in xml format.
+In this repo you will find a tool to search for motives in a folder of music scores in xml/musicxml format.
 The tool will search for motives that are repeated in the scores.
 
-Major features of the tool are:
-
-- Find motives across hundreds of scores, even orchestral scores
-- Take mirrored, inverted and mirrored and inverted motives into account
-- Filter motives by frequency, length and number of intervals
-- Allow for gaps between intervals
+Major features of the tool:
+- Find motives across hundreds of scores, including orchestral scores
+- Account for mirrored, inverted, and mirrored-and-inverted motives
+- Filter motives by frequency, length, and number of intervals
+- Allow gaps between intervals
 - Option to remove accidentals from the input
-- Ignores rhythms and only considers the pitch of the notes
+- Option to ignore eighth and sixteenth rests (or shorter)
+- Option to use only the highest/lowest note in a chord or to ignore chords
+- Ignore rhythm and consider only pitch
+
+This tool was used for the paper: TODO.
 
 ## Algorithm details
 
@@ -18,35 +21,34 @@ The algorithm is loosely based on the paper [Benammar et al.](https://doi.org/10
 
 ### Determination of mirrored and inverted motives
 
-In contrast to Benammar et al., the algorithm does not determine mirrored and inverted motives directly.
-It first determines the motives inside each score.
-Then in a second step, it merges the motives across the scores, sorting the mirrored and inverted motives together.
+n contrast to Benammar et al., the algorithm does not determine mirrored and inverted motives directly.
+It first determines the motives within each score.
+Then, in a second step, it merges the motives across scores, grouping mirrored and inverted motives together.
 This way, mirrored and inverted motives can be found across different scores.
 
 ### Handling of rests
 
-While determining the intervals, rests are handled in the following manner:
+While determining intervals, rests are handled as follows:
 
-- If a note is followed by a rest, the interval get the special value: "note before"
-- If a rest is followed by a note, the interval get the special value: "note after"
-- If a rest is followed by a rest, the interval get the special value: "rest"
+- If a note is followed by a rest, the interval gets the special value "note before".
+- If a rest is followed by a note, the interval gets the special value "note after".
+- If a rest is followed by a rest, the interval gets the special value "rest".
 
 The algorithm then runs as if rests are regular intervals. Thus, they can be "skipped" through the gap feature.
 In the end, motives with rests are removed from the result, so it only contains regular intervals.
 
 ### Handling of slurs
 
-The algorithm treats slurs as a single note, e.g. two quarter notes connected by a slur are treated as a single half
-note.
+The algorithm treats slurs as a single note; for example, two quarter notes connected by a slur are treated as a single half note.
 
 # Installation
 
-This project is developed for linux distributions.
-It might work also for other distributions, since it runs python scripts.
-For this project you need to have a running version of python3 and musecore3.
+This project is developed for Linux distributions.
+It may also work on other systems, since it runs Python scripts.
+For this project you need Python 3 and MuseScore 3.
 
-We use [uv](https://docs.astral.sh/uv/) to install packages.
-To install the necessary python packages you can run the following command:
+We use [uv](https://docs.astral.sh/uv/) to install packages and handle the python version.
+To install the necessary Python packages, run:
 
 ```bash
 uv venv
@@ -55,59 +57,53 @@ uv pip install -e .
 ```
 
 # Usage
+You can run 
+```bash
+PYTHONPATH=src uv run src/main --help
+```
+from the root folder to get an overview of the available and required options.
 
-To run the script you need to execute the following command:
-
+Example:
 ```bash
 python3 src/main.py
     --inputFolder yourPathToInputFolder
     --outputFolder yourPathToInputFolder
-    --minFrequency 2
+    --minFrequency 1
     --maxGap 0
     --minNumSequences 3
     --maxNumSequences 3
-    --maxLength 4
-    --useDiatonic
+    --maxLength 3
+    --accidentalTreatment REMOVE_ACCIDENTALS
+    --chordTreatment LOWEST
+    --restTreatment REMOVE_EIGHTS_AND_LOWER
 ```
-
-## Settings
-
-- `--inputFolder` : Path to the folder containing the music scores in the format of .musicxml or .xml
-- `--outputFolder` : Path to the folder where the output will be saved
-- `--minFrequency` : Minimum number of times a motive should appear in the scores
-- `--maxGap` : Maximum number of intervals that can be skipped between two intervals of the motive
-- `--minNumSequences` : Minimum number of intervals of the result motives
-- `--maxNumSequences` : Maximum number of intervals of the result motives
-- `--maxLength` : Maximum length of the motive (difference of the position between the first and last note)
-- `--useDiatonic` : Removes accidentals from the input
+You can find more examples in the "examples" folder.
 
 ## Output
 
-The script will output a json file containing a list the motives found in the scores.
-Each motive will contain a list of intervals and the positions where the motives are found.
+The script outputs a JSON file containing a list of the motives found in the scores.
+Each motive contains a list of intervals and the positions where the motives are found.
 
-The intervals are classified in so-called interval classes. An interval class can be either:
+The intervals are classified into so-called interval classes. An interval class is one of:
 
-- 0: Original: The first occurrence of the interval, which is defined as the original
-- 1: Inverted: The interval inverted
-- 2: Mirrored: The interval mirrored
-- 3: Mirrored and Inverted: The interval mirrored and inverted
+- 0: Original — the interval in its original orientation
+- 1: Inverted — the interval inverted
+- 2: Mirrored — the interval mirrored
+- 3: Mirrored and inverted — the interval mirrored and inverted
 
-The intervals are then classified by the interval name, e.g. a Third is 3; a Seventh is 7, etc.
-The direction of the interval is defined by the sign of the interval.
-Positive intervals are ascending, negative intervals are descending.
+Intervals are then classified by interval number; e.g., a third is 3; a seventh is 7; etc.
+The sign of the interval indicates direction: positive intervals are ascending, negative intervals are descending.
 
-The positions are defined first by the interval class, then by the score name, then by the part, then by voice number
-and finally by the absolute position in the piece and length of the motive.
-The length of the motive is defined by the position of the first and last note of the motive.
+Positions are grouped first by interval class, then by score name, part, voice number, and finally by the absolute position in the piece and the length of the motive.
+The length of the motive is determined by the positions of the first and last notes of the motive.
 
-An example of one motive is the following:
+An example motive:
 
 ```json
 {
   "intervals": {
     "interval_classes": {
-      "0": {
+      "ORIGINAl": {
         "intervals": [
           {
             "_interval": -8
@@ -120,7 +116,7 @@ An example of one motive is the following:
           }
         ]
       },
-      "1": {
+      "INVERTED": {
         "intervals": [
           {
             "_interval": 8
@@ -133,7 +129,7 @@ An example of one motive is the following:
           }
         ]
       },
-      "2": {
+      "MIRRORED": {
         "intervals": [
           {
             "_interval": -10
@@ -146,7 +142,7 @@ An example of one motive is the following:
           }
         ]
       },
-      "3": {
+      "MIRRORED_INVERTED": {
         "intervals": [
           {
             "_interval": 10
@@ -162,9 +158,9 @@ An example of one motive is the following:
     }
   },
   "positions": {
-    "0": {
-      "SmokeOnTheWater_MusiX1_S.149": {
-        "P2-Staff2": {
+    "ORIGINAl": {
+      "SomePiece": {
+        "SomePart": {
           "0": [
             {
               "position": 35,
@@ -183,34 +179,9 @@ An example of one motive is the following:
 
 # Analysis
 
-The json file from the previous step containing the motives found in the scores,
-can be analyzed using the script `analysis/analysis.py`.
-
-The analysis script filters first the motive positions, such that the positions inside a motive do not overlap.
-This means that each occurrence of a motive can only overlap with one note of the same motive.
-
-The script will read the json file and analyze the motives,
-which in turn creates a csv file containing the following columns:
-
-- intervals_original: The intervals of the original motive
-- intervals_inverted: The intervals of the inverted motive
-- intervals_mirrored: The intervals of the mirrored motive
-- intervals_mirrored_inverted: The intervals of the mirrored and inverted motive
-- frequency: The total number of times the motive appears in the scores (sum of all interval classes)
-- frequency_original: The number of times the original motive appears in the scores
-- frequency_inverted: The number of times the inverted motive appears in the scores
-- frequency_mirrored: The number of times the mirrored motive appears in the scores
-- frequency_mirrored_inverted: The number of times the mirrored and inverted motive appears in the scores
-- in_n_pieces: The number of scores where the motive appears.
-- mean_relative_frequency: The mean relative frequency of the motive in the scores over all pieces
-- standard_deviation_relative_frequency: The standard deviation of the relative frequency of the motive in the scores
-  over all pieces
-- weighted_arithmetic_mean: The weighted arithmetic mean of the relative frequency of the motive in the scores over all
-  pieces
-- frequency_<piece>: The number of times the motive appears in the piece, where <piece> is the name of the piece
-- relative_frequency_<piece>: The relative frequency of the motive in the piece, where <piece> is the name of the piece
-
-It can be run with the following command:
+The JSON file from the previous step containing the motives found in the scores can be analyzed using the script `analysis/analysis.py`.
+It produces a statistical analysis of the output.
+It also reorders the interval classes within each motive so that the original interval class has the highest number of entries.   
 
 ```bash
 python3 analysis/analysis.py 
@@ -218,3 +189,24 @@ python3 analysis/analysis.py
   --outputFolder yourPathToOutputFolder
 ```
 
+Optionally, via the `--filterOverlappingPositions` or `--no-filterOverlappingPositions flag`,
+you can let the analysis script filter motive positions so that positions within a motive (per interval type) do not overlap.
+
+The script reads the JSON file and analyzes the motives,
+producing a CSV file containing the following columns:
+
+- intervals_original: The intervals of the original interval class
+- intervals_inverted: The intervals of the inverted interval class
+- intervals_mirrored: The intervals of the mirrored interval class
+- intervals_mirrored_inverted: The intervals of the mirrored and inverted interval class
+- frequency: The total number of times the motive appears in the scores (sum of all interval classes)
+- frequency_original: The number of times the original interval class appears in the scores
+- frequency_inverted: The number of times the inverted interval class appears in the scores
+- frequency_mirrored: The number of times the mirrored interval class appears in the scores
+- frequency_mirrored_inverted: The number of times the mirrored and inverted interval class appears in the scores
+- in_n_pieces: The number of scores where the motive appears.
+- mean_relative_frequency: The mean relative frequency of the motive in the scores over all pieces
+- standard_deviation_relative_frequency: The standard deviation of the relative frequency of the motive in the scores over all pieces
+- weighted_arithmetic_mean: The weighted arithmetic mean of the relative frequency of the motive in the scores over all pieces
+- frequency_<piece>: The number of times the motive appears in the piece, where \<piece\> is the name of the piece
+- relative_frequency_<piece>: The relative frequency of the motive in the piece, where \<piece\> is the name of the piece
