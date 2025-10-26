@@ -31,7 +31,6 @@ class MotiveUnitGenerator:
 
     @staticmethod
     def original_from_voice(voice: Voice) -> List[Motive]:
-
         single_motives: List[Motive] = []
 
         for i, note_or_rest in enumerate(voice.notes):

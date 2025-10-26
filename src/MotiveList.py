@@ -8,6 +8,7 @@ from Motive import Motive
 from MotivePosition import MotivePosition
 from SequenceType import SequenceType
 
+
 class IntervalClasses(BaseModel):
     interval_classes: Dict[SequenceType, IntervalList]
 
@@ -40,7 +41,10 @@ class IntervalClasses(BaseModel):
     def name(self, sequence_type: SequenceType) -> str:
         return str(self.interval_classes[sequence_type])
 
-def _default_positions() -> Dict[SequenceType, Dict[str, Dict[str, Dict[str, List[MotivePosition]]]]]:
+
+def _default_positions() -> Dict[
+    SequenceType, Dict[str, Dict[str, Dict[str, List[MotivePosition]]]]
+]:
     return {
         SequenceType.ORIGINAL: {},
         SequenceType.INVERTED: {},
@@ -48,11 +52,12 @@ def _default_positions() -> Dict[SequenceType, Dict[str, Dict[str, Dict[str, Lis
         SequenceType.MIRRORED_INVERTED: {},
     }
 
+
 class ResultMotive(BaseModel):
     intervals: IntervalClasses
-    positions: Dict[SequenceType, Dict[str, Dict[str, Dict[str, List[MotivePosition]]]]] = Field(
-        default_factory=_default_positions
-    )
+    positions: Dict[
+        SequenceType, Dict[str, Dict[str, Dict[str, List[MotivePosition]]]]
+    ] = Field(default_factory=_default_positions)
 
     def get_sequence_type(self, motive: Motive) -> Optional[SequenceType]:
         interval_list = IntervalList(intervals=motive.sequence)

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
+
 class AccidentalTreatment(Enum):
     NONE = 0
     REMOVE_ACCIDENTALS = 1
@@ -8,7 +9,8 @@ class AccidentalTreatment(Enum):
     @classmethod
     def from_string(cls, s: str) -> "AccidentalTreatment":
         lower_map = {member.name.lower(): member for member in cls}
-        return lower_map.get(s.lower().replace('-', '_'))
+        return lower_map.get(s.lower().replace("-", "_"))
+
 
 class RestTreatment(Enum):
     NONE = 0
@@ -26,7 +28,8 @@ class RestTreatment(Enum):
     @classmethod
     def from_string(cls, s: str) -> "RestTreatment":
         lower_map = {member.name.lower(): member for member in cls}
-        return lower_map.get(s.lower().replace('-', '_'))
+        return lower_map.get(s.lower().replace("-", "_"))
+
 
 class ChordTreatment(Enum):
     HIGHEST = 0
@@ -36,7 +39,8 @@ class ChordTreatment(Enum):
     @classmethod
     def from_string(cls, s: str) -> "ChordTreatment":
         lower_map = {member.name.lower(): member for member in cls}
-        return lower_map.get(s.lower().replace('-', '_'))
+        return lower_map.get(s.lower().replace("-", "_"))
+
 
 @dataclass
 class ParseOptions:

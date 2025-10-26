@@ -17,9 +17,18 @@ import pandas as pd
 
 def parse_args() -> (Path, Path):
     parser = argparse.ArgumentParser(description="Plot Motive Generator output")
-    parser.add_argument("--inputFile", type=str, help="File containing the output", required=True)
-    parser.add_argument("--outputFolder", type=str, help="Folder for output files", required=True)
-    parser.add_argument("--filterOverlappingPositions", action=argparse.BooleanOptionalAction, help="Filter overlapping positions of motives", default=True)
+    parser.add_argument(
+        "--inputFile", type=str, help="File containing the output", required=True
+    )
+    parser.add_argument(
+        "--outputFolder", type=str, help="Folder for output files", required=True
+    )
+    parser.add_argument(
+        "--filterOverlappingPositions",
+        action=argparse.BooleanOptionalAction,
+        help="Filter overlapping positions of motives",
+        default=True,
+    )
 
     args = parser.parse_args()
     input_file = Path(args.inputFile)
@@ -54,7 +63,14 @@ class MotiveClass:
     standard_derivation_relative_frequency: float
     weighted_arithmetic_mean: float
 
-def rearrange_so_original_has_max_value(original_dict: Dict[str, int], original: str, inverted: str, mirrored: str, mirrored_inverted: str) -> Tuple[Dict[str, int], str, str, str, str]:
+
+def rearrange_so_original_has_max_value(
+    original_dict: Dict[str, int],
+    original: str,
+    inverted: str,
+    mirrored: str,
+    mirrored_inverted: str,
+) -> Tuple[Dict[str, int], str, str, str, str]:
     key_with_max_value = max(original_dict, key=original_dict.get)
 
     if key_with_max_value == "INVERTED":
@@ -84,6 +100,7 @@ def rearrange_so_original_has_max_value(original_dict: Dict[str, int], original:
     else:
         return original_dict, original, inverted, mirrored, mirrored_inverted
 
+
 def main():
     input_file, output_folder, filter_overlapping_positions_option = parse_args()
 
@@ -93,17 +110,37 @@ def main():
     motive_classes: Dict[str, MotiveClass] = {}
 
     for motive in motive_list.motives:
-        intervals_original = str(motive.intervals.interval_classes[SequenceType.ORIGINAL])
-        intervals_inverted = str(motive.intervals.interval_classes[SequenceType.INVERTED])
-        intervals_mirrored = str(motive.intervals.interval_classes[SequenceType.MIRRORED])
-        intervals_mirrored_inverted = str(motive.intervals.interval_classes[SequenceType.MIRRORED_INVERTED])
+        intervals_original = str(
+            motive.intervals.interval_classes[SequenceType.ORIGINAL]
+        )
+        intervals_inverted = str(
+            motive.intervals.interval_classes[SequenceType.INVERTED]
+        )
+        intervals_mirrored = str(
+            motive.intervals.interval_classes[SequenceType.MIRRORED]
+        )
+        intervals_mirrored_inverted = str(
+            motive.intervals.interval_classes[SequenceType.MIRRORED_INVERTED]
+        )
 
         if filter_overlapping_positions_option:
             filter_overlapping_positions(motive)
 
         frequency_per_sequence_type = get_frequency_per_sequence_type(motive)
 
-        frequency_per_sequence_type, intervals_original, intervals_inverted, intervals_mirrored, intervals_mirrored_inverted = rearrange_so_original_has_max_value(frequency_per_sequence_type, intervals_original, intervals_inverted, intervals_mirrored, intervals_mirrored_inverted)
+        (
+            frequency_per_sequence_type,
+            intervals_original,
+            intervals_inverted,
+            intervals_mirrored,
+            intervals_mirrored_inverted,
+        ) = rearrange_so_original_has_max_value(
+            frequency_per_sequence_type,
+            intervals_original,
+            intervals_inverted,
+            intervals_mirrored,
+            intervals_mirrored_inverted,
+        )
 
         frequency_per_piece = get_frequency_per_piece(piece_titles, motive)
 
@@ -391,7 +428,7 @@ def get_frequency_per_piece(piece_titles: Set[str], result_motive: ResultMotive)
     return frequency_per_piece
 
 
-def filter_overlapping_positions(result_motive: ResultMotive, filter_overlapping_positions_option: bool = True):
+def filter_overlapping_positions(result_motive: ResultMotive):
     helper_positions_by_piece = {}
     logging.info(f"Calculating helper positions")
     for sequence_type, positions_by_sequence_type in result_motive.positions.items():
@@ -404,9 +441,9 @@ def filter_overlapping_positions(result_motive: ResultMotive, filter_overlapping
                 for voice, positions_by_voice in positions_by_part.items():
                     if voice not in helper_positions_by_piece[piece][part]:
                         helper_positions_by_piece[piece][part][voice] = {}
-                    helper_positions_by_piece[piece][part][voice][
-                        sequence_type
-                    ] = positions_by_voice
+                    helper_positions_by_piece[piece][part][voice][sequence_type] = (
+                        positions_by_voice
+                    )
 
     logging.info(f"Filtering all positions")
     for piece, positions_by_piece in helper_positions_by_piece.items():
@@ -417,7 +454,6 @@ def filter_overlapping_positions(result_motive: ResultMotive, filter_overlapping
                     sequence_type,
                     positions_by_sequence_type,
                 ) in positions_by_voice.items():
-
                     enumerated_positions = [
                         {"position": position, "sequenceType": sequence_type}
                         for position in positions_by_sequence_type
