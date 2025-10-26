@@ -1,6 +1,6 @@
 # Motive search
 
-In this repo you will find a tool to search for motives in a folder of music scores in xml/musicxml format.
+In this repo you will find a tool to search for motives in a folder of music scores in XML/MusicXML format.
 The tool will search for motives that are repeated in the scores.
 
 Major features of the tool:
@@ -13,7 +13,8 @@ Major features of the tool:
 - Option to use only the highest/lowest note in a chord or to ignore chords
 - Ignore rhythm and consider only pitch
 
-This tool was used for the paper: TODO.
+This tool was used in the paper TODO. The corresponding scripts can be found in the `examples` folder.
+Since the scores are copyright-protected, only sample MusicXML files are provided.
 
 ## Algorithm details
 
