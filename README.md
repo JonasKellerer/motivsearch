@@ -45,7 +45,7 @@ The algorithm treats slurs as a single note; for example, two quarter notes conn
 
 This project is developed for Linux distributions.
 It may also work on other systems, since it runs Python scripts.
-For this project you need Python 3 and MuseScore 3.
+For this project you need Python 3.10 and MuseScore 4.6.2. It might run with other versions, but was not tested.
 
 We use [uv](https://docs.astral.sh/uv/) to install packages and handle the python version.
 To install the necessary Python packages, run:
